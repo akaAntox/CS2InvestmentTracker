@@ -28,15 +28,15 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
             .Property(x => x.BuyPrice)
             .IsRequired()
             .HasDefaultValue(0)
-            .HasPrecision(2);
+            .HasPrecision(18, 2);
 
         builder
             .Property(x => x.MinSellPrice)
-            .HasPrecision(2);
+            .HasPrecision(18, 2);
 
         builder
             .Property(x => x.AvgSellPrice)
-            .HasPrecision(2);
+            .HasPrecision(18, 2);
 
         builder
             .Property(x => x.CategoryId)

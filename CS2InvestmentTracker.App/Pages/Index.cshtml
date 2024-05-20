@@ -1,5 +1,5 @@
 ﻿@page
-@model IndexModel
+@model YourNamespace.Pages.IndexModel
 @{
     ViewData["Title"] = "Home page";
 }
@@ -7,4 +7,69 @@
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
+
+<div>
+    <h2>Items</h2>
+    <form method="post" asp-page-handler="Add">
+        <div>
+            <label>Name:</label>
+            <input type="text" asp-for="NewItem.Name" />
+        </div>
+        <div>
+            <label>Quantity:</label>
+            <input type="number" asp-for="NewItem.Quantity" />
+        </div>
+        <div>
+            <label>Buy Price:</label>
+            <input type="number" asp-for="NewItem.BuyPrice" step="0.01" />
+        </div>
+        <div>
+            <button type="submit">Add Item</button>
+        </div>
+    </form>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Buy Price</th>
+                <th>Min Sell Price</th>
+                <th>Avg Sell Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>
+                        <input type="text" value="@item.Name" form="updateForm-@item.Id" name="item.Name" />
+                    </td>
+                    <td>
+                        <input type="number" value="@item.Quantity" form="updateForm-@item.Id" name="item.Quantity" />
+                    </td>
+                    <td>
+                        <input type="number" value="@item.BuyPrice" form="updateForm-@item.Id" name="item.BuyPrice" step="0.01" />
+                    </td>
+                    <td>
+                        <input type="number" value="@item.MinSellPrice" form="updateForm-@item.Id" name="item.MinSellPrice" step="0.01" />
+                    </td>
+                    <td>
+                        <input type="number" value="@item.AvgSellPrice" form="updateForm-@item.Id" name="item.AvgSellPrice" step="0.01" />
+                    </td>
+                    <td>
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" style="display:inline;">
+                            <button type="submit">Delete</button>
+                        </form>
+                        <form id="updateForm-@item.Id" method="post" asp-page-handler="Update">
+                            <input type="hidden" name="item.Id" value="@item.Id" />
+                            <button type="submit">Update</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
