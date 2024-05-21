@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 # Custom
 Scripts/
+*.db-shm
+*.db-wal
+CS2InvestmentTracker.db
