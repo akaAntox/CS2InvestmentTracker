@@ -72,5 +72,5 @@
             }
         </tbody>
     </table> *@
-    <div id="ItemsJsGrid"></div>
+    <div id="ItemsJsGrid" data-items='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items))'></div>
 </div>

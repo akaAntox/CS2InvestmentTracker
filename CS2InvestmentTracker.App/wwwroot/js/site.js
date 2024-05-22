@@ -3,20 +3,14 @@
 
 // Write your JavaScript code.ù
 
+var itemsJsGrid = $('#ItemsJsGrid');
+var items = JSON.parse(itemsJsGrid.attr('data-items'));
 
-var clients = [
-    { "Name": "Otto Clay", "Age": 25, "Country": 1, "Address": "Ap #897-1459 Quam Avenue", "Married": false },
-    { "Name": "Connor Johnston", "Age": 45, "Country": 2, "Address": "Ap #370-4647 Dis Av.", "Married": true },
-    { "Name": "Lacey Hess", "Age": 29, "Country": 3, "Address": "Ap #365-8835 Integer St.", "Married": false },
-    { "Name": "Timothy Henson", "Age": 56, "Country": 1, "Address": "911-5143 Luctus Ave", "Married": true },
-    { "Name": "Ramona Benton", "Age": 32, "Country": 3, "Address": "Ap #614-689 Vehicula Street", "Married": false }
-];
-
-var countries = [
-    { Name: "", Id: 0 },
-    { Name: "United States", Id: 1 },
-    { Name: "Canada", Id: 2 },
-    { Name: "United Kingdom", Id: 3 }
+var categories = [
+    { Name: "Stockholm 2021", Id: 0 },
+    { Name: "Capsule", Id: 1 },
+    { Name: "RMR 2020", Id: 2 },
+    { Name: "Prova", Id: 3 }
 ];
 
 $("#ItemsJsGrid").jsGrid({
@@ -28,14 +22,15 @@ $("#ItemsJsGrid").jsGrid({
     sorting: true,
     paging: true,
 
-    data: clients,
+    data: items,
 
     fields: [
         { name: "Name", type: "text", width: 150, validate: "required" },
-        { name: "Age", type: "number", width: 50 },
-        { name: "Address", type: "text", width: 200 },
-        { name: "Country", type: "select", items: countries, valueField: "Id", textField: "Name" },
-        { name: "Married", type: "checkbox", title: "Is Married", sorting: false },
+        { name: "Quantity", type: "number", width: 30 },
+        { name: "BuyPrice", type: "number", width: 30 },
+        { name: "MinSellPrice", type: "number", width: 30 },
+        { name: "AvgSellPrice", type: "number", width: 30 },
+        { name: "Category", type: "select", items: categories, valueField: "Id", textField: "Name" },
         { type: "control" }
     ]
 });
