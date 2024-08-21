@@ -7,9 +7,11 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
 {
     protected readonly ApplicationDbContext DbContext;
 
-    public GenericRepository(ApplicationDbContext context)
+    public GenericRepository(ApplicationDbContext context) { DbContext = context; }
+
+    public async Task<bool> CheckEntityExists(T entity)
     {
-        DbContext = context;
+        return await DbContext.Set<T>().ContainsAsync(entity);
     }
 
     public async Task<List<T>> GetAllAsync()
@@ -26,29 +28,26 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         var entity = await DbContext.Set<T>().Where(predicate).FirstAsync();
         DbContext.Set<T>().Remove(entity);
-        await DbContext.SaveChangesAsync();
+        await SaveAsync();
     }
 
     public async Task<T> AddAsync(T entity)
     {
         await DbContext.Set<T>().AddAsync(entity);
+        await SaveAsync();
         return entity;
     }
 
-    public async Task UpdateAsync(T entity)
+    public async Task<T> UpdateAsync(T entity)
     {
-        DbContext.Set<T>().Update(entity);
-        await DbContext.SaveChangesAsync();
+        DbContext.Entry(entity).State = EntityState.Modified;
+        await SaveAsync();
+        return entity;
     }
 
     public async Task<int> SaveAsync()
     {
         return await DbContext.SaveChangesAsync();
-    }
-
-    public async Task<T> SelectAsync(Expression<Func<T, bool>> predicate)
-    {
-        return await DbContext.Set<T>().Where(predicate).FirstOrDefaultAsync();
     }
 }
 

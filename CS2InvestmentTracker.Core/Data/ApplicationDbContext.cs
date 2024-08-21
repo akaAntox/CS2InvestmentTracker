@@ -1,4 +1,4 @@
-﻿using CS2InvestmentTracker.Core.Models;
+﻿using CS2InvestmentTracker.Core.Models.Database;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

@@ -1,4 +1,4 @@
-﻿using CS2InvestmentTracker.Core.Models;
+﻿using CS2InvestmentTracker.Core.Models.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,11 +8,8 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
 {
     public void Configure(EntityTypeBuilder<Item> builder)
     {
-        builder
-            .ToTable("Items");
-
-        builder
-            .HasKey(x => x.Id);
+        builder.ToTable("Items");
+        builder.HasKey(x => x.Id);
 
         builder
             .Property(x => x.Name)

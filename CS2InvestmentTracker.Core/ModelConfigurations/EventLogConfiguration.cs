@@ -1,4 +1,4 @@
-﻿using CS2InvestmentTracker.Core.Models;
+﻿using CS2InvestmentTracker.Core.Models.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,11 +8,8 @@ public class EventLogConfiguration : IEntityTypeConfiguration<EventLog>
 {
     public void Configure(EntityTypeBuilder<EventLog> builder)
     {
-        builder
-            .ToTable("EventLogs");
-
-        builder
-            .HasKey(x => x.Id);
+        builder.ToTable("EventLogs");
+        builder.HasKey(x => x.Id);
 
         builder
             .Property(x => x.Date)
@@ -21,9 +18,11 @@ public class EventLogConfiguration : IEntityTypeConfiguration<EventLog>
 
         builder
             .Property(x => x.Action)
-
             .IsRequired()
-            .HasDefaultValue("");
+            .HasConversion(
+                value => (int)value,
+                value => Enum.Parse<ActionType>(value.ToString())
+            );
 
         builder
             .Property(x => x.Message)

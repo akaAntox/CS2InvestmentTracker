@@ -1,4 +1,5 @@
 ﻿using CS2InvestmentTracker.Core.Data;
+using CS2InvestmentTracker.Core.Models.Database;
 using System.Text.Json;
 
 namespace CS2InvestmentTracker.Core.Models;

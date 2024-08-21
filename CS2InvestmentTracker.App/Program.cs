@@ -1,5 +1,6 @@
 using CS2InvestmentTracker.Core.Data;
 using CS2InvestmentTracker.Core.Repositories;
+using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
