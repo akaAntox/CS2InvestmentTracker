@@ -5,5 +5,10 @@ namespace CS2InvestmentTracker.Core.Repositories.Custom;
 
 public class ItemRepository : GenericRepository<Item>
 {
-    public ItemRepository(ApplicationDbContext context) : base(context) { }
+    private readonly ApplicationDbContext context;
+
+    public ItemRepository(ApplicationDbContext context) : base(context)
+    {
+        this.context = context;
+    }
 }
