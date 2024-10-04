@@ -6,6 +6,7 @@ using System.Text.Json;
 
 namespace CS2InvestmentTracker.Core.Models;
 
+// API LIMIT: around 200 requests every 5 minutes for market items IIRC
 public class SteamApi
 {
     private const string PricesLink = "https://steamcommunity.com/market/priceoverview/?appid=730&currency=3&market_hash_name=";
@@ -42,7 +43,7 @@ public class SteamApi
         logger.LogInformation("Aggiornamento prezzi completato");
     }
 
-    public async Task UpdateItemPriceAsync(Item item)
+    private async Task UpdateItemPriceAsync(Item item)
     {
         HttpClient web = new();
 

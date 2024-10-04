@@ -1,62 +1,29 @@
-using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Repositories.Custom;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 
-namespace YourNamespace.Pages
+namespace CS2InvestmentTracker.App.Pages;
+
+public class IndexModel : PageModel
 {
-    public class IndexModel : PageModel
+    private readonly ItemRepository _itemRepository;
+    private readonly CategoryRepository _categoryRepository;
+
+    public IndexModel(ItemRepository itemRepository, CategoryRepository categoryRepository)
     {
-        private readonly ItemRepository _itemRepository;
+        _itemRepository = itemRepository;
+        _categoryRepository = categoryRepository;
+    }
 
-        public IndexModel(ItemRepository itemRepository)
-        {
-            _itemRepository = itemRepository;
-        }
+    public async Task<IActionResult> OnGetItemsAsync()
+    {
+        var items = await _itemRepository.GetAllAsync();
+        return Partial("_ItemsTable", items);
+    }
 
-        [BindProperty]
-        public Item NewItem { get; set; }
-
-        public List<Item> Items { get; set; }
-
-        public async Task OnGetAsync()
-        {
-            Items = await _itemRepository.GetAllAsync();
-        }
-
-        public async Task<IActionResult> OnPostAddAsync()
-        {
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
-
-            NewItem.InsertDate = DateTime.Now;
-            NewItem.EditDate = null;
-            await _itemRepository.AddAsync(NewItem);
-            await _itemRepository.SaveAsync();
-            return RedirectToPage();
-        }
-
-        public async Task<IActionResult> OnPostDeleteAsync(int id)
-        {
-            await _itemRepository.DeleteAsync(i => i.Id == id);
-            await _itemRepository.SaveAsync();
-            return RedirectToPage();
-        }
-
-        public async Task<IActionResult> OnPostUpdateAsync(Item item)
-        {
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
-
-            await _itemRepository.UpdateAsync(item);
-            await _itemRepository.SaveAsync();
-            return RedirectToPage();
-        }
+    public async Task<IActionResult> OnGetCategoriesAsync()
+    {
+        var categories = await _categoryRepository.GetAllAsync();
+        return Partial("_CategoriesTable", categories);
     }
 }

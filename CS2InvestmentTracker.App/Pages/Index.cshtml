@@ -1,76 +1,49 @@
 ﻿@page
-@model YourNamespace.Pages.IndexModel
+@model CS2InvestmentTracker.App.Pages.IndexModel
+
 @{
     ViewData["Title"] = "Home page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container">
+    <div class="row">
+        <!-- Menu Laterale -->
+        <div class="col-md-3">
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <a href="#" onclick="loadTabella('Items')">Items</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="#" onclick="loadTabella('Categories')">Categories</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Area di Contenuto -->
+        <div class="col-md-9">
+            <div id="contentArea">
+                <!-- Il contenuto dinamico verrà caricato qui -->
+            </div>
+        </div>
+    </div>
 </div>
 
-<div>
-    <h2>Items</h2>
-    <form method="post" asp-page-handler="Add">
-        <div>
-            <label>Name:</label>
-            <input type="text" asp-for="NewItem.Name" />
-        </div>
-        <div>
-            <label>Quantity:</label>
-            <input type="number" asp-for="NewItem.Quantity" />
-        </div>
-        <div>
-            <label>Buy Price:</label>
-            <input type="number" asp-for="NewItem.BuyPrice" step="0.01" />
-        </div>
-        <div>
-            <button type="submit">Add Item</button>
-        </div>
-    </form>
-@* 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Quantity</th>
-                <th>Buy Price</th>
-                <th>Min Sell Price</th>
-                <th>Avg Sell Price</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.Items)
-            {
-                <tr>
-                    <td>
-                        <input type="text" value="@item.Name" form="updateForm-@item.Id" name="item.Name" />
-                    </td>
-                    <td>
-                        <input type="number" value="@item.Quantity" form="updateForm-@item.Id" name="item.Quantity" />
-                    </td>
-                    <td>
-                        <input type="number" value="@item.BuyPrice" form="updateForm-@item.Id" name="item.BuyPrice" step="0.01" />
-                    </td>
-                    <td>
-                        <input type="number" value="@item.MinSellPrice" form="updateForm-@item.Id" name="item.MinSellPrice" step="0.01" />
-                    </td>
-                    <td>
-                        <input type="number" value="@item.AvgSellPrice" form="updateForm-@item.Id" name="item.AvgSellPrice" step="0.01" />
-                    </td>
-                    <td>
-                        <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" style="display:inline;">
-                            <button type="submit">Delete</button>
-                        </form>
-                        <form id="updateForm-@item.Id" method="post" asp-page-handler="Update">
-                            <input type="hidden" name="item.Id" value="@item.Id" />
-                            <button type="submit">Update</button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table> *@
-    <div id="ItemsJsGrid" data-items='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items))'></div>
-</div>
+@section Scripts {
+    <script>
+        function loadTabella(tabellaName) {
+            var url = '/Index?handler=' + tabellaName;
+            console.log('Chiamata AJAX a: ' + url);
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (data) {
+                    $('#contentArea').html(data);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Errore nella chiamata AJAX:', xhr.responseText);
+                }
+            });
+        }
+    </script>
+}

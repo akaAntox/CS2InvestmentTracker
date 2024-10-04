@@ -18,6 +18,8 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<ItemRepository>();
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<EventLogRepository>();
 
 var app = builder.Build();
 

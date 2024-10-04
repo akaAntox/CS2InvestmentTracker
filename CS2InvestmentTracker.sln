@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CS2InvestmentTracker.App", "CS2InvestmentTracker.App\CS2InvestmentTracker.App.csproj", "{0170667C-D594-4468-ABA3-66C34E9E4E2D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CS2InvestmentTracker.App", "CS2InvestmentTracker.App\CS2InvestmentTracker.App.csproj", "{0170667C-D594-4468-ABA3-66C34E9E4E2D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CS2InvestmentTracker.Core", "CS2InvestmentTracker.Core\CS2InvestmentTracker.Core.csproj", "{5D2D2D15-A168-472B-8FE3-DD6F64895D7A}"
 EndProject

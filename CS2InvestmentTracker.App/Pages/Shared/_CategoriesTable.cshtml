@@ -1,0 +1,27 @@
+﻿@model IEnumerable<CS2InvestmentTracker.Core.Models.Database.Category>
+
+@{
+    Layout = null;
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var category in Model)
+        {
+            <tr>
+                <td>@category.Name</td>
+                <td>@category.Description</td>
+                <td>
+                    @* Azioni come Modifica, Elimina *@
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
