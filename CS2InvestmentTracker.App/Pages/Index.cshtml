@@ -11,10 +11,10 @@
         <div class="col-md-3">
             <ul class="list-group">
                 <li class="list-group-item">
-                    <a href="#" onclick="loadTabella('Items')">Items</a>
+                    <a href="#" data-table="Items" class="load-table">Items</a>
                 </li>
                 <li class="list-group-item">
-                    <a href="#" onclick="loadTabella('Categories')">Categories</a>
+                    <a href="#" data-table="Categories" class="load-table">Categories</a>
                 </li>
             </ul>
         </div>
@@ -29,9 +29,16 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/itemsTable.js"></script>
+    <script src="~/js/categoriesTable.js"></script>
     <script>
-        function loadTabella(tabellaName) {
-            var url = '/Index?handler=' + tabellaName;
+        $(".load-table").click(function() {
+            var tableName = $(this).data("table");
+            loadTable(tableName);
+        })
+
+        function loadTable(tableName) {
+            var url = '/Index?handler=' + tableName;
             console.log('Chiamata AJAX a: ' + url);
 
             $.ajax({
@@ -39,9 +46,20 @@
                 type: 'GET',
                 success: function (data) {
                     $('#contentArea').html(data);
+
+                    switch (tableName) {
+                        case 'Categories':
+                            bindCategoriesUI();
+                            initCategoriesTable();
+                            break;
+                        case 'Items':
+                            bindItemsUI();
+                            initItemsTable();
+                            break;
+                    }
                 },
                 error: function (xhr, status, error) {
-                    console.error('Errore nella chiamata AJAX:', xhr.responseText);
+                    console.error('Errore AJAX:', xhr.responseText);
                 }
             });
         }

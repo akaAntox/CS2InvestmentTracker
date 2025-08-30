@@ -1,49 +1,72 @@
-﻿@model IEnumerable<CS2InvestmentTracker.Core.Models.Database.Item>
-
-@{
+﻿@{
     Layout = null;
 }
 
-<table class="table">
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="m-0">Items</h5>
+    <button id="btnAddItem" class="btn btn-sm btn-success">+ Add</button>
+</div>
+
+@* Table *@
+<table id="itemsTable" class="table table-striped">
     <thead>
         <tr>
+            <th>Category</th>
             <th>Name</th>
             <th>Quantity</th>
             <th>Buy Price</th>
             <th>Min Sell Price</th>
             <th>Avg Sell Price</th>
+            <th>Inserted</th>
+            <th>Edited</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>
-                    <input type="text" value="@item.Name" form="updateForm-@item.Id" name="item.Name" />
-                </td>
-                <td>
-                    <input type="number" value="@item.Quantity" form="updateForm-@item.Id" name="item.Quantity" />
-                </td>
-                <td>
-                    <input type="number" value="@item.BuyPrice" form="updateForm-@item.Id" name="item.BuyPrice" step="0.01" />
-                </td>
-                <td>
-                    <input type="number" value="@item.MinSellPrice" form="updateForm-@item.Id" name="item.MinSellPrice" step="0.01" />
-                </td>
-                <td>
-                    <input type="number" value="@item.AvgSellPrice" form="updateForm-@item.Id" name="item.AvgSellPrice" step="0.01" />
-                </td>
-                <td>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" style="display:inline;">
-                        <button type="submit">Delete</button>
-                    </form>
-                    <form id="updateForm-@item.Id" method="post" asp-page-handler="Update">
-                        <input type="hidden" name="item.Id" value="@item.Id" />
-                        <button type="submit">Update</button>
-                    </form>
-                </td>
-            </tr>
-        }
     </tbody>
 </table>
+
+@* Modal: Create/Edit *@
+<div class="modal fade" id="createItemModal" tabindex="-1" aria-labelledby="createItemLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="createItemForm" autocomplete="off">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createItemLabel">New Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Name</label>
+                            <input name="name" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Category</label>
+                            <input name="category" class="form-control" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Quantity</label>
+                            <input name="quantity" type="number" class="form-control" value="0" min="0" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Buy Price</label>
+                            <input name="buyPrice" type="number" step="0.01" class="form-control" value="0" />
+                        </div>
+                    </div>
+
+                    <div class="text-danger small mt-2 d-none" id="createItemError"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="createItemSubmit" type="submit" class="btn btn-primary">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

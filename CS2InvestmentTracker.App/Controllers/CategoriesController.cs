@@ -8,12 +8,12 @@ namespace CS2InvestmentTracker.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CategoryController : ControllerBase
+public class CategoriesController : ControllerBase
 {
-    private ILogger<CategoryController> logger;
+    private ILogger<CategoriesController> logger;
     private CategoryRepository categoryRepository;
 
-    public CategoryController(ILogger<CategoryController> logger, CategoryRepository categoryRepository)
+    public CategoriesController(ILogger<CategoriesController> logger, CategoryRepository categoryRepository)
     {
         this.logger = logger;
         this.categoryRepository = categoryRepository;
@@ -46,8 +46,8 @@ public class CategoryController : ControllerBase
         return Ok(category);
     }
 
-    [HttpDelete]
-    public async Task<ActionResult> DeleteCategory([FromBody] int categoryId)
+    [HttpDelete("{categoryId}")]
+    public async Task<ActionResult> DeleteCategory(int categoryId)
     {
         if (categoryId <= 0)
         {

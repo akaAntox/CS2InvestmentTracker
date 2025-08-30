@@ -1,10 +1,13 @@
-﻿@model IEnumerable<CS2InvestmentTracker.Core.Models.Database.Category>
-
-@{
+﻿@{
     Layout = null;
 }
 
-<table class="table">
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="m-0">Categories</h5>
+    <button id="btnAddCategory" class="btn btn-sm btn-success">+ Add</button>
+</div>
+
+<table id="categoriesTable" class="table table-striped">
     <thead>
         <tr>
             <th>Name</th>
@@ -13,15 +16,41 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var category in Model)
-        {
-            <tr>
-                <td>@category.Name</td>
-                <td>@category.Description</td>
-                <td>
-                    @* Azioni come Modifica, Elimina *@
-                </td>
-            </tr>
-        }
     </tbody>
 </table>
+
+@* Modal: Create/Edit *@
+<div class="modal fade" id="createCategoryModal" tabindex="-1" aria-labelledby="createCategoryLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="createCategoryForm" autocomplete="off">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createCategoryLabel">New Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Name</label>
+                            <input name="name" class="form-control" required />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Description</label>
+                            <input name="name" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="text-danger small mt-2 d-none" id="createCategoryError"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="createCategorySubmit" type="submit" class="btn btn-primary">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

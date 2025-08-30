@@ -10,13 +10,13 @@ namespace CS2InvestmentTracker.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class ItemController : ControllerBase
+public class ItemsController : ControllerBase
 {
-    private readonly ILogger<ItemController> logger;
+    private readonly ILogger<ItemsController> logger;
     private readonly ItemRepository itemRepository;
     private readonly UserManager<IdentityUser> userManager;
 
-    public ItemController(ILogger<ItemController> logger, ItemRepository itemRepository, UserManager<IdentityUser> userManager)
+    public ItemsController(ILogger<ItemsController> logger, ItemRepository itemRepository, UserManager<IdentityUser> userManager)
     {
         this.logger = logger;
         this.itemRepository = itemRepository;
@@ -50,8 +50,8 @@ public class ItemController : ControllerBase
         return Ok(item);
     }
 
-    [HttpDelete]
-    public async Task<ActionResult> DeleteItem([FromBody] int itemId)
+    [HttpDelete("{itemId}")]
+    public async Task<ActionResult> DeleteItem(int itemId)
     {
         if (itemId <= 0)
         {
