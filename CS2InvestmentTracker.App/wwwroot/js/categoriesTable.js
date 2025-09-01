@@ -102,23 +102,23 @@ function deleteCategory(id) {
     });
 }
 
-function editItem(id) {
-    $.get('/api/categories/' + id, function (item) {
-        var nuovoNome = prompt("Nome:", item.name);
+function editCategory(id) {
+    $.get('/api/categories/' + id, function (category) {
+        var nuovoNome = prompt("Nome:", category.name);
         if (nuovoNome == null) return;
 
-        var nuovaDescrizione = prompt("Descrizione:", item.quantity);
+        var nuovaDescrizione = prompt("Descrizione:", category.quantity);
 
-        item.name = nuovoNome;
-        item.quantity = parseInt(nuovaDescrizione, 10);
+        category.name = nuovoNome;
+        category.quantity = parseInt(nuovaDescrizione, 10);
 
         $.ajax({
-            url: '/api/items',
+            url: '/api/categories/' + id,
             type: 'PUT',
             contentType: 'application/json',
-            data: JSON.stringify(item),
+            data: JSON.stringify(category),
             success: function () {
-                $('#itemsTable').DataTable().ajax.reload(null, false);
+                $('#categoriesTable').DataTable().ajax.reload(null, false);
             },
             error: function (xhr) {
                 console.error(xhr.responseText);
