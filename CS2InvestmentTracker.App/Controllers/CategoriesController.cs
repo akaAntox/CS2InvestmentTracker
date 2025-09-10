@@ -1,4 +1,5 @@
 ﻿using CS2InvestmentTracker.Core.Models.Database;
+using CS2InvestmentTracker.Core.Models.DTOs;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using CS2InvestmentTracker.Core.Validators;
 using FluentValidation.AspNetCore;
@@ -20,30 +21,36 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Category>> InsertCategory([FromBody] Category category)
+    public async Task<ActionResult<CategoryCreateDto>> CreateCategory([FromBody] CategoryCreateDto categoryDto)
     {
-        var validator = new CategoryValidator();
-        var result = validator.Validate(category);
+        var validator = new CategoryCreateDtoValidator();
+        var result = validator.Validate(categoryDto);
         result.AddToModelState(ModelState);
 
         if (!ModelState.IsValid)
         {
-            logger.LogWarning("Error while adding category {name}: Invalid model state", category.Name);
+            logger.LogWarning("Error while adding category {name}: Invalid model state", categoryDto.Name);
             return BadRequest();
         }
 
         try
         {
+            var category = new Category
+            {
+                Name = categoryDto.Name,
+                Description = categoryDto.Description
+            };
+
             logger.LogInformation("Adding category {name}", category.Name);
             await categoryRepository.AddAsync(category);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while adding category {name}: {ex}", category.Name, ex.Message);
+            logger.LogWarning("Error while adding category {name}: {ex}", categoryDto.Name, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
 
-        return Ok(category);
+        return Ok(categoryDto);
     }
 
     [HttpDelete("{categoryId}")]
@@ -70,7 +77,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<ActionResult<Category>> UpdateCategory([FromBody] Category category)
+    public async Task<ActionResult<Category>> UpdateCategory([FromBody] CategoryUpdateDto category)
     {
         var validator = new CategoryValidator();
         var result = validator.Validate(category);
