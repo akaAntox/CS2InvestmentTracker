@@ -23,7 +23,7 @@
 <div class="modal fade" id="createCategoryModal" tabindex="-1" aria-labelledby="createCategoryLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
-            <form id="createCategoryForm" autocomplete="off">
+            <form id="categoryForm" autocomplete="off">
                 <div class="modal-header">
                     <h5 class="modal-title" id="createCategoryLabel">New Category</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -31,10 +31,14 @@
 
                 <div class="modal-body">
                     <div class="row g-3">
+                        @* ID *@
+                        <input type="hidden" name="id" />
+                        @* NAME *@
                         <div class="col-md-6">
                             <label class="form-label">Name</label>
                             <input name="name" class="form-control" required />
                         </div>
+                        @* DESCRIPTION *@
                         <div class="col-md-12">
                             <label class="form-label">Description</label>
                             <input name="description" class="form-control" />

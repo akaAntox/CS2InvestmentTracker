@@ -1,7 +1,7 @@
 ﻿using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Models.DTOs;
 using CS2InvestmentTracker.Core.Repositories.Custom;
-using CS2InvestmentTracker.Core.Validators;
+using CS2InvestmentTracker.Core.Validators.DTOs;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,7 +21,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<CategoryCreateDto>> CreateCategory([FromBody] CategoryCreateDto categoryDto)
+    public async Task<ActionResult<Category>> CreateCategory([FromBody] CategoryCreateDto categoryDto)
     {
         var validator = new CategoryCreateDtoValidator();
         var result = validator.Validate(categoryDto);
@@ -30,7 +30,7 @@ public class CategoriesController : ControllerBase
         if (!ModelState.IsValid)
         {
             logger.LogWarning("Error while adding category {name}: Invalid model state", categoryDto.Name);
-            return BadRequest();
+            return ValidationProblem(ModelState);
         }
 
         try
@@ -43,14 +43,13 @@ public class CategoriesController : ControllerBase
 
             logger.LogInformation("Adding category {name}", category.Name);
             await categoryRepository.AddAsync(category);
+            return Ok(category);
         }
         catch (Exception ex)
         {
             logger.LogWarning("Error while adding category {name}: {ex}", categoryDto.Name, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
-
-        return Ok(categoryDto);
     }
 
     [HttpDelete("{categoryId}")]
@@ -77,34 +76,43 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<ActionResult<Category>> UpdateCategory([FromBody] CategoryUpdateDto category)
+    public async Task<ActionResult<Category>> UpdateCategory([FromBody] CategoryUpdateDto categoryDto)
     {
-        var validator = new CategoryValidator();
-        var result = validator.Validate(category);
+        var validator = new CategoryUpdateDtoValidator();
+        var result = validator.Validate(categoryDto);
         result.AddToModelState(ModelState);
 
         if (!ModelState.IsValid)
         {
-            logger.LogWarning("Error while updating category {name}: Invalid model state", category.Name);
-            return BadRequest();
+            logger.LogWarning("Error while updating category {name}: Invalid model state", categoryDto.Name);
+            return ValidationProblem(ModelState);
         }
 
         try
         {
+            var category = await categoryRepository.GetByIdAsync(categoryDto.Id);
+            if (category == null)
+            {
+                logger.LogWarning("Error while updating category {name}: Category not found", categoryDto.Name);
+                return NotFound();
+            }
+
+            category.Name = categoryDto.Name;
+            category.Description = categoryDto.Description;
+
             logger.LogInformation("Updating category {name}", category.Name);
             await categoryRepository.UpdateAsync(category);
+            return Ok(category);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while updating category {name}: {ex}", category.Name, ex.Message);
+            logger.LogWarning("Error while updating category {name}: {ex}", categoryDto.Name, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
-
-        return Ok(category);
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
+    public async Task<ActionResult<IEnumerable<CategoryReadDto>>> GetCategories()
     {
         try
         {
@@ -120,7 +128,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("{categoryId}")]
-    public async Task<ActionResult<Category>> GetCategory(int categoryId)
+    public async Task<ActionResult<CategoryReadDto>> GetCategory(int categoryId)
     {
         if (categoryId <= 0)
         {
@@ -132,6 +140,8 @@ public class CategoriesController : ControllerBase
         {
             logger.LogInformation("Getting category id {id}", categoryId);
             var category = await categoryRepository.GetByIdAsync(categoryId);
+            if (category == null) throw new KeyNotFoundException("Category not found");
+
             return Ok(category);
         }
         catch (Exception ex)

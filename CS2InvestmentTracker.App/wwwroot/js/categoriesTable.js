@@ -19,7 +19,7 @@ function initCategoriesTable() {
                 searchable: false,
                 render: (_, __, row) =>
                     `<div class="btn-group btn-group-sm">
-                     <button class="btn btn-primary" onclick="editCategory(${row.id})">Edit</button>
+                     <button name="btnEditCategory" class="btn btn-primary">Edit</button>
                      <button class="btn btn-danger"  onclick="deleteCategory(${row.id})">Delete</button>
                    </div>`
             }
@@ -28,27 +28,55 @@ function initCategoriesTable() {
 }
 
 function bindCategoriesUI() {
-    const modalEl = document.getElementById('createCategoryModal');
+    const modalEl = $('#createCategoryModal');
     if (!modalEl) return;
     const bsModal = new bootstrap.Modal(modalEl);
+    const form = $("#categoryForm");
 
+    //Reset on close
+    modalEl.on('hidden.bs.modal', function () {
+        form[0].reset();
+        form.find("input[name='id']").val('').removeAttr('value');
+        form.find("#createCategoryError").addClass('d-none').text('');
+        form.find("#createCategorySubmit").prop('disabled', false);
+    });
+
+    //Add category
     $("#btnAddCategory").off('click').on('click', function () {
-        $("#createCategoryForm")[0].reset();
+        form[0].reset();
+        form.find(".modal-title").text("Add Category");
+        form.find("input[name='id']").val('').removeAttr('value');
         bsModal.show();
     });
 
-    $("#createCategoryForm").off('submit').on('submit', function (e) {
+    //Edit category
+    $('#categoriesTable').off('click', "button[name='btnEditCategory']").on('click', "button[name='btnEditCategory']", function () {
+        form[0].reset();
+        form.find(".modal-title").text("Edit Category");
+        const data = categoriesDt.row($(this).closest('tr')).data();
+        if (!data) return;
+        $("input[name='id']").val(data.id);
+        $("input[name='name']").val(data.name);
+        $("input[name='description']").val(data.description);
+        bsModal.show();
+    });
+
+    //Submit form
+    $("#categoryForm").off('submit').on('submit', function (e) {
         e.preventDefault();
 
+        const id = $("input[name='id']").val();
         const dto = {
             name: $("input[name='name']").val(),
             description: $("input[name='description']").val(),
+            ...(id ? { id: parseInt($("input[name='id']").val(), 10) } : {})
         };
 
         $.ajax({
             url: '/api/categories',
-            type: 'POST',
+            type: id ? 'PUT' : 'POST',
             contentType: 'application/json',
+
             data: JSON.stringify(dto),
             success: function () {
                 bsModal.hide();
@@ -58,30 +86,6 @@ function bindCategoriesUI() {
                 alert("Errore: " + xhr.responseText);
             }
         });
-    });
-}
-
-function createCategory() {
-    var categoria = prompt("Nuova categoria:");
-    if (!categoria) return;
-
-    var newCategory = {
-        name: categoria,
-        description: ""
-    };
-
-    $.ajax({
-        url: '/api/categories',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(newCategory),
-        success: function () {
-            $('#categoriesTable').DataTable().ajax.reload(null, false);
-        },
-        error: function (xhr) {
-            console.error(xhr.responseText);
-            alert("Errore nella creazione");
-        }
     });
 }
 
@@ -99,31 +103,5 @@ function deleteCategory(id) {
             console.error(xhr.responseText);
             alert("Errore nell'eliminazione");
         }
-    });
-}
-
-function editCategory(id) {
-    $.get('/api/categories/' + id, function (category) {
-        var nuovoNome = prompt("Nome:", category.name);
-        if (nuovoNome == null) return;
-
-        var nuovaDescrizione = prompt("Descrizione:", category.quantity);
-
-        category.name = nuovoNome;
-        category.quantity = parseInt(nuovaDescrizione, 10);
-
-        $.ajax({
-            url: '/api/categories/' + id,
-            type: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify(category),
-            success: function () {
-                $('#categoriesTable').DataTable().ajax.reload(null, false);
-            },
-            error: function (xhr) {
-                console.error(xhr.responseText);
-                alert("Errore nell'update");
-            }
-        });
     });
 }
