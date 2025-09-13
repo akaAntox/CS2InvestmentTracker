@@ -1,8 +1,9 @@
-﻿using CS2InvestmentTracker.Core.Models.Database;
+﻿using CS2InvestmentTracker.Core.Models;
+using CS2InvestmentTracker.Core.Models.Database;
+using CS2InvestmentTracker.Core.Models.DTOs;
 using CS2InvestmentTracker.Core.Repositories.Custom;
-using CS2InvestmentTracker.Core.Validators;
+using CS2InvestmentTracker.Core.Validators.DTOs;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,44 +11,46 @@ namespace CS2InvestmentTracker.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class ItemsController : ControllerBase
+public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger, ItemRepository itemRepository, UserManager<IdentityUser> userManager) : ControllerBase
 {
-    private readonly ILogger<ItemsController> logger;
-    private readonly ItemRepository itemRepository;
-    private readonly UserManager<IdentityUser> userManager;
-
-    public ItemsController(ILogger<ItemsController> logger, ItemRepository itemRepository, UserManager<IdentityUser> userManager)
-    {
-        this.logger = logger;
-        this.itemRepository = itemRepository;
-        this.userManager = userManager;
-    }
+    private readonly SteamApi steamApi = steamApi;
+    private readonly UserManager<IdentityUser> userManager = userManager;
 
     [HttpPost]
-    public async Task<ActionResult<Item>> InsertItem([FromBody] Item item)
+    public async Task<ActionResult<Item>> CreateItem([FromBody] ItemCreateDto itemDto)
     {
-        var validator = new ItemValidator();
-        var result = validator.Validate(item);
+        var validator = new ItemCreateDtoValidator();
+        var result = validator.Validate(itemDto);
         result.AddToModelState(ModelState);
 
         if (!ModelState.IsValid)
         {
-            logger.LogWarning("Error while adding item {name}: Invalid model state", item.Name);
-            return BadRequest();
+            logger.LogWarning("Error while adding item {name}: Invalid model state", itemDto.Name);
+            return ValidationProblem(ModelState);
         }
 
         try
         {
+            var item = new Item
+            {
+                Name = itemDto.Name,
+                Description = itemDto.Description,
+                Quantity = itemDto.Quantity,
+                BuyPrice = itemDto.BuyPrice,
+                CategoryId = itemDto.CategoryId,
+                InsertDate = DateTime.Now
+            };
+
             logger.LogInformation("Adding item {name}", item.Name);
             await itemRepository.AddAsync(item);
+            await steamApi.UpdateItemPriceAsync(item);
+            return Ok(item);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while adding item {name}: {ex}", item.Name, ex.Message);
+            logger.LogWarning("Error while adding item {name}: {ex}", itemDto.Name, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
-
-        return Ok(item);
     }
 
     [HttpDelete("{itemId}")]
@@ -74,39 +77,52 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<ActionResult<Item>> UpdateItem([FromBody] Item item)
+    public async Task<ActionResult<Item>> UpdateItem([FromBody] ItemUpdateDto itemDto)
     {
-        var validator = new ItemValidator();
-        var result = validator.Validate(item);
+        var validator = new ItemUpdateDtoValidator();
+        var result = validator.Validate(itemDto);
         result.AddToModelState(ModelState);
 
         if (!ModelState.IsValid)
         {
-            logger.LogWarning("Error while updating item {name}: Invalid model state", item.Name);
-            return BadRequest();
+            logger.LogWarning("Error while updating item {name}: Invalid model state", itemDto.Name);
+            return ValidationProblem(ModelState);
         }
 
         try
         {
+            var item = await itemRepository.GetByIdAsync(itemDto.Id);
+            if (item == null)
+            {
+                logger.LogWarning("Error while updating item {name}: Item not found", itemDto.Name);
+                return NotFound();
+            }
+
+            item.EditDate = DateTime.UtcNow;
+            item.Name = itemDto.Name;
+            item.Description = itemDto.Description;
+            item.Quantity = itemDto.Quantity;
+            item.BuyPrice = itemDto.BuyPrice;
+            item.CategoryId = itemDto.CategoryId;
+
             logger.LogInformation("Updating item {name}", item.Name);
             await itemRepository.UpdateAsync(item);
+            return Ok(item);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while updating item {name}: {ex}", item.Name, ex.Message);
+            logger.LogWarning("Error while updating item {name}: {ex}", itemDto.Name, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
-
-        return Ok(item);
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Item>>> GetItems()
+    public async Task<ActionResult<IEnumerable<ItemReadDto>>> GetItems()
     {
         try
         {
             logger.LogInformation("Getting all items");
-            var items = await itemRepository.GetAllAsync();
+            var items = await itemRepository.GetItemsWithCategoryAsync();
             return Ok(items);
         }
         catch (Exception ex)
@@ -117,7 +133,7 @@ public class ItemsController : ControllerBase
     }
 
     [HttpGet("{itemId}")]
-    public async Task<ActionResult<Item>> GetItem(int itemId)
+    public async Task<ActionResult<ItemReadDto>> GetItem(int itemId)
     {
         if (itemId <= 0)
         {
@@ -128,7 +144,8 @@ public class ItemsController : ControllerBase
         try
         {
             logger.LogInformation("Getting item id {id}", itemId);
-            var item = await itemRepository.GetByIdAsync(itemId);
+            var item = await itemRepository.GetByIdAsync(itemId) ?? throw new KeyNotFoundException("Item not found");
+
             return Ok(item);
         }
         catch (Exception ex)
