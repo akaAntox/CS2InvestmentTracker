@@ -1,19 +1,18 @@
 ﻿using CS2InvestmentTracker.Core.Data;
 using CS2InvestmentTracker.Core.Exceptions;
 using CS2InvestmentTracker.Core.Models.Database;
+using CS2InvestmentTracker.Core.Repositories.Custom;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace CS2InvestmentTracker.Core.Models;
 
 // API LIMIT: around 200 requests every 5 minutes for market items IIRC
-public class SteamApi
+public class SteamApi(IServiceScopeFactory serviceScopeFactory, ILogger<SteamApi> logger)
 {
     private const string PricesLink = "https://steamcommunity.com/market/priceoverview/?appid=730&currency=3&market_hash_name=";
     
-    private readonly ApplicationDbContext context;
-    private ILogger<SteamApi> logger;
-
     public async Task UpdatePricesAsync(IQueryable<Item> items)
     {
         foreach (Item item in items)
@@ -24,26 +23,27 @@ public class SteamApi
             }
             catch (HttpRequestException ex)
             {
-                logger.LogError($"Richiesta HTTP non valida: {ex.Message}");
+                logger.LogError(ex, "Richiesta HTTP non valida: {Message}", ex.Message);
             }
             catch (JsonException ex)
             {
-                logger.LogError($"Errore durante la deserializzazione della risposta JSON: {ex.Message}");
+                logger.LogError(ex, "Errore durante la deserializzazione della risposta JSON: {Message}", ex.Message);
             }
             catch (ApiResponseException ex)
             {
-                logger.LogError($"Errore durante la lettura della risposta API: {ex.Message}");
+                logger.LogError(ex, "Errore durante la lettura della risposta API: {Message}", ex.Message);
             }
             catch (Exception ex)
             {
-                logger.LogError($"Errore durante l'aggiornamento dei prezzi per l'elemento {item.Name}: {ex.Message}");
+                logger.LogError(ex, "Errore durante l'aggiornamento dei prezzi per l'elemento {ItemName}: {Message}",
+                                item.Name, ex.Message);
             }
         }
 
         logger.LogInformation("Aggiornamento prezzi completato");
     }
 
-    private async Task UpdateItemPriceAsync(Item item)
+    public async Task UpdateItemPriceAsync(Item item)
     {
         HttpClient web = new();
 
@@ -60,8 +60,11 @@ public class SteamApi
         {
             item.MinSellPrice = apiResponse.LowestPrice;
             item.AvgSellPrice = apiResponse.MedianPrice;
+            item.SellVolume = apiResponse.Volume;
 
-            await context.SaveChangesAsync();
+            var provider = serviceScopeFactory.CreateScope().ServiceProvider;
+            var itemRepository = provider.GetRequiredService<ItemRepository>();
+            await itemRepository.UpdateAsync(item);
         }
         else
         {

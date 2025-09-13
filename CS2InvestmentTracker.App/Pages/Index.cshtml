@@ -32,6 +32,10 @@
     <script src="~/js/itemsTable.js"></script>
     <script src="~/js/categoriesTable.js"></script>
     <script>
+        $(document).ready(function() {
+            loadTable('Items');
+        })
+
         $(".load-table").click(function() {
             var tableName = $(this).data("table");
             loadTable(tableName);
@@ -55,6 +59,7 @@
                         case 'Items':
                             bindItemsUI();
                             initItemsTable();
+                            initItemsForm();
                             break;
                     }
                 },

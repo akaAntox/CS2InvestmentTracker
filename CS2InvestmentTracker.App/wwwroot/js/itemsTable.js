@@ -1,4 +1,17 @@
 ﻿let itemsDt = null;
+function initBsTooltips(scope) {
+    // scope: jQuery element che contiene i pulsanti (es. $('#itemsTable'))
+    const $els = scope.find('[data-bs-toggle="tooltip"]');
+
+    $els.each(function () {
+        // se esiste già un'istanza, la distruggo per evitare duplicati/memory leak
+        const existing = bootstrap.Tooltip.getInstance(this);
+        if (existing) existing.dispose();
+
+        // nuova istanza tooltip
+        new bootstrap.Tooltip(this, { container: 'body', placement: 'top' });
+    });
+}
 
 function initItemsTable() {
     if (itemsDt) {
@@ -11,56 +24,144 @@ function initItemsTable() {
         pageLength: 25,
         responsive: true,
         columns: [
-            { data: 'category' },
+            //{ data: 'category.name' },
             { data: 'name' },
             { data: 'quantity' },
-            { data: 'buyPrice' },
-            { data: 'minSellPrice' },
-            { data: 'avgSellPrice' },
+            { data: 'buyPrice', render: (d) => d != null ? d.toFixed(2) + ' €' : '' },
+            { data: 'minSellPrice', render: (d) => d != null ? d.toFixed(2) + ' €' : '' },
+            { data: 'netProfit', render: (d) => d != null ? d.toFixed(3) + ' €' : '' },
+            //{ data: 'avgSellPrice' },
             {
                 data: 'insertDate',
-                render: (d) => d ? new Date(d).toLocaleString() : ''
+                render: (d) => d
+                    ? new Date(d).toLocaleString(undefined, {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                    : ''
             },
-            {
-                data: 'editDate',
-                render: (d) => d ? new Date(d).toLocaleString() : ''
-            },
+            //{
+            //    data: 'editDate',
+            //    render: (d) => d ? new Date(d).toLocaleString() : ''
+            //},
             {
                 data: null,
                 orderable: false,
                 searchable: false,
                 render: (_, __, row) =>
-                    `<div class="btn-group btn-group-sm">
-                     <button class="btn btn-primary" onclick="editItem(${row.id})">Edit</button>
-                     <button class="btn btn-danger"  onclick="deleteItem(${row.id})">Delete</button>
+                   `<div class="btn-group btn-group-sm">
+                     <button name="btnEditItem" class="btn btn-primary" data-bs-toggle="tooltip" title="Edit">
+                        <i class="fas fa-pencil"></i>
+                     </button>
+                     <button name="btnDeleteItem" class="btn btn-danger" data-bs-toggle="tooltip" title="Delete">
+                        <i class="fas fa-trash-alt"></i>
+                     </button>
+                     <button name="btnUpdatePricesItem" class="btn btn-warning" data-bs-toggle="tooltip" title="Update price">
+                        <i class="fas fa-sync text-white"></i>
+                     </button>
                    </div>`
             }
-        ]
+        ],
+        initComplete: function () {
+            initBsTooltips($('#itemsTable'));
+        },
+        drawCallback: function () {
+            initBsTooltips($('#itemsTable'));
+        }
     });
 }
 
+function initItemsForm() {
+    const form = $("#createItemForm");
+    if (form.length === 0) return;
+
+    form[0].reset();
+
+    $.ajax({
+        url: '/api/categories',
+        type: 'GET',
+        success: function (data) {
+            const select = form.find("select[name='categories']");
+            select.empty();
+            const opt = new Option('-- Select Category --', '');
+            opt.disabled = true;
+            select.append(opt);
+            data.forEach(cat => {
+                select.append(new Option(cat.name, cat.id));
+            });
+        },
+        error: function (xhr) {
+            console.error(xhr.responseText);
+            alert("Errore nel caricamento delle categorie");
+        }
+    })
+}
+
 function bindItemsUI() {
-    const modalEl = document.getElementById('createItemModal');
+    const modalEl = $('#createItemModal');
     if (!modalEl) return;
+    const form = $("#createItemForm");
+    if (form.length === 0) return;
     const bsModal = new bootstrap.Modal(modalEl);
 
+    //Reset on close
+    modalEl.on('hidden.bs.modal', function () {
+        form[0].reset();
+        form.find("input[name='id']").val('').removeAttr('value');
+        form.find("#createItemError").addClass('d-none').text('');
+        form.find("#createItemSubmit").prop('disabled', false);
+    });
+
+    //Add item
     $("#btnAddItem").off('click').on('click', function () {
-        $("#createItemForm")[0].reset();
+        form[0].reset();
+        form.find(".modal-title").text("Add Item");
+        form.find("input[name='id']").val('').removeAttr('value');
         bsModal.show();
     });
 
+    //Edit item
+    $('#itemsTable').off('click', "button[name='btnEditItem']").on('click', "button[name='btnEditItem']", function () {
+        form[0].reset();
+        form.find(".modal-title").text("Edit Item");
+        const data = itemsDt.row($(this).closest('tr')).data();
+        if (!data) return;
+        $("input[name='id']").val(data.id);
+        $("input[name='name']").val(data.name);
+        $("select[name='categories']").val(data.categoryId);
+        $("input[name='description']").val(data.description);
+        $("input[name='quantity']").val(data.quantity);
+        $("input[name='buyPrice']").val(data.buyPrice);
+        bsModal.show();
+    });
+
+    //Delete item
+    $('#itemsTable').off('click', "button[name='btnDeleteItem']").on('click', "button[name='btnDeleteItem']", function () {
+        const data = itemsDt.row($(this).closest('tr')).data();
+        if (!data) return;
+        deleteItem(data.id);
+    });
+
+    //Submit form
     $("#createItemForm").off('submit').on('submit', function (e) {
         e.preventDefault();
 
+        const id = $("input[name='id']").val();
         const dto = {
             name: $("input[name='name']").val(),
-            category: $("input[name='category']").val(),
-            quantity: parseInt($("input[name='quantity']").val(), 10) || 0
+            categoryId: parseInt($("select[name='categories']").val()) || 0,
+            description: $("textarea[name='description']").val(),
+            quantity: parseInt($("input[name='quantity']").val(), 10) || 0,
+            buyPrice: parseFloat($("input[name='buyPrice']").val()) || 0,
+            ...(id ? { id: parseInt($("input[name='id']").val(), 10) } : {})
         };
 
         $.ajax({
             url: '/api/items',
-            type: 'POST',
+            type: id ? 'PUT' : 'POST',
             contentType: 'application/json',
             data: JSON.stringify(dto),
             success: function () {
@@ -71,34 +172,6 @@ function bindItemsUI() {
                 alert("Errore: " + xhr.responseText);
             }
         });
-    });
-}
-
-function createItem() {
-    var nome = prompt("Nuovo item:");
-    if (!nome) return;
-
-    var newItem = {
-        name: nome,
-        quantity: 0,
-        buyPrice: 0,
-        minSellPrice: 0,
-        avgSellPrice: 0,
-        category: ""
-    };
-
-    $.ajax({
-        url: '/api/items',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(newItem),
-        success: function () {
-            $('#itemsTable').DataTable().ajax.reload(null, false);
-        },
-        error: function (xhr) {
-            console.error(xhr.responseText);
-            alert("Errore nella creazione");
-        }
     });
 }
 
@@ -116,31 +189,5 @@ function deleteItem(id) {
             console.error(xhr.responseText);
             alert("Errore nell'eliminazione");
         }
-    });
-}
-
-function editItem(id) {
-    $.get('/api/items/' + id, function (item) {
-        var nuovoNome = prompt("Nome:", item.name);
-        if (nuovoNome == null) return;
-
-        var nuovoQty = prompt("Quantità:", item.quantity);
-
-        item.name = nuovoNome;
-        item.quantity = parseInt(nuovoQty, 10);
-
-        $.ajax({
-            url: '/api/items',
-            type: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify(item),
-            success: function () {
-                $('#itemsTable').DataTable().ajax.reload(null, false);
-            },
-            error: function (xhr) {
-                console.error(xhr.responseText);
-                alert("Errore nell'update");
-            }
-        });
     });
 }

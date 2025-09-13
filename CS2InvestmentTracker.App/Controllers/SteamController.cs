@@ -8,18 +8,11 @@ namespace CS2InvestmentTracker.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SteamController : ControllerBase
+public class SteamController(SteamApi steamApi, ItemRepository itemRepository, ILogger<SteamController> logger) : ControllerBase
 {
-    private readonly SteamApi steamApi;
-    private readonly ItemRepository itemRepository;
-    private readonly ILogger<SteamController> logger;
-
-    public SteamController(SteamApi steamApi, ItemRepository itemRepository, ILogger<SteamController> logger)
-    {
-        this.steamApi = steamApi;
-        this.itemRepository = itemRepository;
-        this.logger = logger;
-    }
+    private readonly SteamApi steamApi = steamApi;
+    private readonly ItemRepository itemRepository = itemRepository;
+    private readonly ILogger<SteamController> logger = logger;
 
     [HttpPost]
     public async Task<ActionResult> UpdatePrices()

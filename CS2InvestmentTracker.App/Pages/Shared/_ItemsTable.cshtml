@@ -11,14 +11,15 @@
 <table id="itemsTable" class="table table-striped">
     <thead>
         <tr>
-            <th>Category</th>
+            @* <th>Category</th> *@
             <th>Name</th>
-            <th>Quantity</th>
-            <th>Buy Price</th>
-            <th>Min Sell Price</th>
-            <th>Avg Sell Price</th>
+            <th>Qty</th>
+            <th>Bought</th>
+            <th>Sell</th>
+            <th>Net Profit</th>
+            @* <th>Avg Sell Price</th> *@
             <th>Inserted</th>
-            <th>Edited</th>
+            @* <th>Edited</th> *@
             <th>Actions</th>
         </tr>
     </thead>
@@ -38,22 +39,34 @@
 
                 <div class="modal-body">
                     <div class="row g-3">
+                        @* ID *@
+                        <input type="hidden" name="id" />
+                        @* NAME *@
                         <div class="col-md-6">
                             <label class="form-label">Name</label>
                             <input name="name" class="form-control" required />
                         </div>
+                        @* CATEGORY *@
                         <div class="col-md-6">
                             <label class="form-label">Category</label>
-                            <input name="category" class="form-control" />
+                            <select name="categories" class="form-select col-md-6" required>
+                                <option value="" disabled selected>Select Category</option>
+                            </select>
                         </div>
-
+                        @* DESCRIPTION *@
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="2"></textarea>
+                        </div>
+                        @* QUANTITY *@
                         <div class="col-md-6">
                             <label class="form-label">Quantity</label>
-                            <input name="quantity" type="number" class="form-control" value="0" min="0" required />
+                            <input name="quantity" type="number" class="form-control" value="1" min="1" required />
                         </div>
+                        @* BUY PRICE *@
                         <div class="col-md-6">
                             <label class="form-label">Buy Price</label>
-                            <input name="buyPrice" type="number" step="0.01" class="form-control" value="0" />
+                            <input name="buyPrice" type="number" step="0.01" class="form-control" value="0.01" />
                         </div>
                     </div>
 

@@ -18,9 +18,9 @@ function initCategoriesTable() {
                 orderable: false,
                 searchable: false,
                 render: (_, __, row) =>
-                    `<div class="btn-group btn-group-sm">
+                   `<div class="btn-group btn-group-sm">
                      <button name="btnEditCategory" class="btn btn-primary">Edit</button>
-                     <button class="btn btn-danger"  onclick="deleteCategory(${row.id})">Delete</button>
+                     <button name="btnDeleteCategory" class="btn btn-danger">Delete</button>
                    </div>`
             }
         ]
@@ -61,6 +61,13 @@ function bindCategoriesUI() {
         bsModal.show();
     });
 
+    //Delete category
+    $('#categoriesTable').off('click', "button[name='btnDeleteCategory']").on('click', "button[name='btnDeleteCategory']", function () {
+        const data = categoriesDt.row($(this).closest('tr')).data();
+        if (!data) return;
+        deleteCategory(data.id);
+    });
+
     //Submit form
     $("#categoryForm").off('submit').on('submit', function (e) {
         e.preventDefault();
@@ -76,7 +83,6 @@ function bindCategoriesUI() {
             url: '/api/categories',
             type: id ? 'PUT' : 'POST',
             contentType: 'application/json',
-
             data: JSON.stringify(dto),
             success: function () {
                 bsModal.hide();

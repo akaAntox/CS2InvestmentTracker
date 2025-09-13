@@ -1,5 +1,3 @@
-using CS2InvestmentTracker.Core.Models.Database;
-
 namespace CS2InvestmentTracker.Core.Models.DTOs;
 
 public class CategoryDto
@@ -10,6 +8,12 @@ public class CategoryDto
 
 public class CategoryCreateDto : CategoryDto { }
 
-public class CategoryUpdateDto : Category { }
+public class CategoryUpdateDto : CategoryDto
+{
+    public int Id { get; set; }
+}
 
-public class CategoryReadDto : Category { }
+public class CategoryReadDto : CategoryDto
+{
+    public int Id { get; set; }
+}

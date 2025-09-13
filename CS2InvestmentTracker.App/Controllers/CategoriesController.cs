@@ -3,22 +3,18 @@ using CS2InvestmentTracker.Core.Models.DTOs;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using CS2InvestmentTracker.Core.Validators.DTOs;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CS2InvestmentTracker.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CategoriesController : ControllerBase
+public class CategoriesController(ILogger<CategoriesController> logger, CategoryRepository categoryRepository, UserManager<IdentityUser> userManager) : ControllerBase
 {
-    private ILogger<CategoriesController> logger;
-    private CategoryRepository categoryRepository;
-
-    public CategoriesController(ILogger<CategoriesController> logger, CategoryRepository categoryRepository)
-    {
-        this.logger = logger;
-        this.categoryRepository = categoryRepository;
-    }
+    private readonly ILogger<CategoriesController> logger = logger;
+    private readonly CategoryRepository categoryRepository = categoryRepository;
+    private readonly UserManager<IdentityUser> userManager = userManager;
 
     [HttpPost]
     public async Task<ActionResult<Category>> CreateCategory([FromBody] CategoryCreateDto categoryDto)
@@ -139,8 +135,7 @@ public class CategoriesController : ControllerBase
         try
         {
             logger.LogInformation("Getting category id {id}", categoryId);
-            var category = await categoryRepository.GetByIdAsync(categoryId);
-            if (category == null) throw new KeyNotFoundException("Category not found");
+            var category = await categoryRepository.GetByIdAsync(categoryId) ?? throw new KeyNotFoundException("Category not found");
 
             return Ok(category);
         }

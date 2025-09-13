@@ -1,4 +1,5 @@
 using CS2InvestmentTracker.Core.Data;
+using CS2InvestmentTracker.Core.Models;
 using CS2InvestmentTracker.Core.Repositories;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.AspNetCore.Identity;
@@ -8,8 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add connection string and database context.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Add identity, razor pages and controllers. 
@@ -24,6 +24,9 @@ builder.Services.AddScoped<ItemRepository>();
 builder.Services.AddScoped<CategoryRepository>();
 builder.Services.AddScoped<EventLogRepository>();
 
+// Add singletons.
+builder.Services.AddSingleton<HttpClient>();
+builder.Services.AddSingleton<SteamApi>();
 
 var app = builder.Build();
 
