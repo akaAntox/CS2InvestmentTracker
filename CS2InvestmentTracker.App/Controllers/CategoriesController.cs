@@ -10,12 +10,8 @@ namespace CS2InvestmentTracker.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CategoriesController(ILogger<CategoriesController> logger, CategoryRepository categoryRepository, UserManager<IdentityUser> userManager) : ControllerBase
+public class CategoriesController(ILogger<CategoriesController> logger, CategoryRepository categoryRepository, EventLogRepository eventRepository, UserManager<IdentityUser> userManager) : ControllerBase
 {
-    private readonly ILogger<CategoriesController> logger = logger;
-    private readonly CategoryRepository categoryRepository = categoryRepository;
-    private readonly UserManager<IdentityUser> userManager = userManager;
-
     [HttpPost]
     public async Task<ActionResult<Category>> CreateCategory([FromBody] CategoryCreateDto categoryDto)
     {
@@ -39,6 +35,7 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
 
             logger.LogInformation("Adding category {name}", category.Name);
             await categoryRepository.AddAsync(category);
+            await eventRepository.NewEvent(ActionType.Insert, $"Category '{category.Name}' created.", category);
             return Ok(category);
         }
         catch (Exception ex)
@@ -61,14 +58,14 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
         {
             logger.LogInformation("Deleting category id {id}", categoryId);
             await categoryRepository.DeleteAsync(c => c.Id == categoryId);
+            await eventRepository.NewEvent(ActionType.Delete, $"Category id {categoryId} deleted.");
+            return Ok();
         }
         catch (Exception ex)
         {
             logger.LogWarning("Error while deleting category id {id}: {ex}", categoryId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
-
-        return Ok();
     }
 
     [HttpPut]
@@ -98,6 +95,7 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
 
             logger.LogInformation("Updating category {name}", category.Name);
             await categoryRepository.UpdateAsync(category);
+            await eventRepository.NewEvent(ActionType.Update, $"Category {category.Name} updated.", categoryDto, category);
             return Ok(category);
         }
         catch (Exception ex)

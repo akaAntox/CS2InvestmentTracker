@@ -11,10 +11,9 @@ namespace CS2InvestmentTracker.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger, ItemRepository itemRepository, UserManager<IdentityUser> userManager) : ControllerBase
+public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger, ItemRepository itemRepository, EventLogRepository eventLogRepository, UserManager<IdentityUser> userManager) : ControllerBase
 {
     private readonly SteamApi steamApi = steamApi;
-    private readonly UserManager<IdentityUser> userManager = userManager;
 
     [HttpPost]
     public async Task<ActionResult<Item>> CreateItem([FromBody] ItemCreateDto itemDto)
@@ -43,6 +42,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
 
             logger.LogInformation("Adding item {name}", item.Name);
             await itemRepository.AddAsync(item);
+            await eventLogRepository.NewEvent(ActionType.Insert, $"Item '{item.Name}' created.", item);
             await steamApi.UpdateItemPriceAsync(item);
             return Ok(item);
         }
@@ -66,14 +66,14 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
         {
             logger.LogInformation("Deleting item id {id}", itemId);
             await itemRepository.DeleteAsync(i => i.Id == itemId);
+            await eventLogRepository.NewEvent(ActionType.Delete, $"Item id '{itemId}' deleted.");
+            return Ok();
         }
         catch (Exception ex)
         {
             logger.LogWarning("Error while deleting item id {id}: {ex}", itemId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
-
-        return Ok();
     }
 
     [HttpPut]
@@ -107,6 +107,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
 
             logger.LogInformation("Updating item {name}", item.Name);
             await itemRepository.UpdateAsync(item);
+            await eventLogRepository.NewEvent(ActionType.Update, $"Item '{item.Name}' updated.", itemDto, item);
             return Ok(item);
         }
         catch (Exception ex)

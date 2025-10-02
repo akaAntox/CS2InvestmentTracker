@@ -19,7 +19,7 @@ function initCategoriesTable() {
                 searchable: false,
                 render: (_, __, row) =>
                    `<div class="btn-group btn-group-sm">
-                     <button name="btnEditItem" class="btn btn-primary" data-bs-toggle="tooltip" title="Edit">
+                     <button name="btnEditCategory" class="btn btn-primary" data-bs-toggle="tooltip" title="Edit">
                         <i class="fas fa-pencil"></i>
                      </button>
                      <button name="btnDeleteCategory" class="btn btn-danger" data-bs-toggle="tooltip" title="Delete">
