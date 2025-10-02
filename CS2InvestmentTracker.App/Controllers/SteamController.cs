@@ -1,5 +1,4 @@
-﻿using CS2InvestmentTracker.Core.Data;
-using CS2InvestmentTracker.Core.Models;
+﻿using CS2InvestmentTracker.Core.Models;
 using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.AspNetCore.Mvc;
@@ -32,28 +31,26 @@ public class SteamController(SteamApi steamApi, ItemRepository itemRepository, I
         return Ok();
     }
 
-    [HttpPost("{item}")]
-    public async Task<ActionResult> UpdatePrice([FromBody] Item item)
+    [HttpPost("{itemId}")]
+    public async Task<ActionResult<Item>> UpdatePrice(int itemId)
     {
-        if (item == null)
+        if (itemId <= 0)
         {
-            logger.LogWarning("Error while updating price: Invalid model state");
-            return BadRequest();
+            logger.LogWarning("Error while updating price for item {name}: Invalid item ID", itemId);
+            return BadRequest("Invalid item ID");
         }
 
         try
         {
+            var item = await itemRepository.GetByIdAsync(itemId) ?? throw new Exception("Item not found");
             logger.LogInformation("Updating price for item {name}", item.Name);
-            var foundItem = await itemRepository.GetByIdAsync(item.Id);
-            var items = new List<Item> { foundItem };
-            await steamApi.UpdatePricesAsync(items.AsQueryable());
+            await steamApi.UpdateItemPriceAsync(item);
+            return Ok(item);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while updating price for item {name}: {ex}", item.Name, ex.Message);
+            logger.LogWarning("Error while updating price for item {id}: {ex}", itemId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
-
-        return Ok();
     }
 }

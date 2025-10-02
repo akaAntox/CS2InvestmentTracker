@@ -56,19 +56,14 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory, ILogger<SteamApi
         var responseBody = await response.Content.ReadAsStringAsync();
         var apiResponse = JsonSerializer.Deserialize<SteamApiResponse>(responseBody);
 
-        if (apiResponse != null && apiResponse.Success)
-        {
-            item.MinSellPrice = apiResponse.LowestPrice;
-            item.AvgSellPrice = apiResponse.MedianPrice;
-            item.SellVolume = apiResponse.Volume;
+        if (apiResponse == null || !apiResponse.Success) throw new ApiResponseException($"Risposta API non valida");
 
-            var provider = serviceScopeFactory.CreateScope().ServiceProvider;
-            var itemRepository = provider.GetRequiredService<ItemRepository>();
-            await itemRepository.UpdateAsync(item);
-        }
-        else
-        {
-            throw new ApiResponseException($"Risposta API non valida");
-        }
+        item.MinSellPrice = apiResponse.LowestPrice;
+        item.AvgSellPrice = apiResponse.MedianPrice;
+        item.SellVolume = apiResponse.Volume;
+
+        var provider = serviceScopeFactory.CreateScope().ServiceProvider;
+        var itemRepository = provider.GetRequiredService<ItemRepository>();
+        await itemRepository.UpdateAsync(item);
     }
 }

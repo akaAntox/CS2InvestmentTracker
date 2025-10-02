@@ -1,14 +1,10 @@
 ﻿let itemsDt = null;
 function initBsTooltips(scope) {
-    // scope: jQuery element che contiene i pulsanti (es. $('#itemsTable'))
     const $els = scope.find('[data-bs-toggle="tooltip"]');
 
     $els.each(function () {
-        // se esiste già un'istanza, la distruggo per evitare duplicati/memory leak
         const existing = bootstrap.Tooltip.getInstance(this);
         if (existing) existing.dispose();
-
-        // nuova istanza tooltip
         new bootstrap.Tooltip(this, { container: 'body', placement: 'top' });
     });
 }
@@ -32,16 +28,17 @@ function initItemsTable() {
             { data: 'netProfit', render: (d) => d != null ? d.toFixed(3) + ' €' : '' },
             //{ data: 'avgSellPrice' },
             {
-                data: 'insertDate',
-                render: (d) => d
-                    ? new Date(d).toLocaleString(undefined, {
+                data: null,
+                render: (d, _, row) => {
+                    const dateValue = row.editDate || row.insertDate;
+                    return dateValue ? new Date(dateValue).toLocaleString(undefined, {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
                         hour: '2-digit',
                         minute: '2-digit'
-                    })
-                    : ''
+                    }) : '';
+                }
             },
             //{
             //    data: 'editDate',
@@ -143,6 +140,29 @@ function bindItemsUI() {
         const data = itemsDt.row($(this).closest('tr')).data();
         if (!data) return;
         deleteItem(data.id);
+    });
+
+    //Update price on item
+    $('#itemsTable').off('click', "button[name='btnUpdatePricesItem']").on('click', "button[name='btnUpdatePricesItem']", function () {
+        const data = itemsDt.row($(this).closest('tr')).data();
+        if (!data) return;
+        const btn = $(this);
+        btn.prop('disabled', true);
+        $.ajax({
+            url: '/api/steam/' + data.id,
+            type: 'POST',
+            contentType: 'application/json',
+            success: function () {
+                if (itemsDt) itemsDt.ajax.reload(null, false);
+            },
+            error: function (xhr) {
+                console.error(xhr.responseText);
+                alert("Errore nell'aggiornamento del prezzo");
+            },
+            complete: function () {
+                btn.prop('disabled', false);
+            }
+        });
     });
 
     //Submit form
