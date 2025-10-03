@@ -1,0 +1,164 @@
+name: CI (build, test, SonarCloud + sync issues)
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  build_test_analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+      SONAR_ORG: ${{ vars.SONAR_ORG }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Add dotnet tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: SonarCloud - Begin
+        run: >
+          dotnet-sonarscanner begin
+          /k:"$SONAR_PROJECT_KEY"
+          /o:"$SONAR_ORG"
+          /d:sonar.host.url="https://sonarcloud.io"
+          /d:sonar.login="$SONAR_TOKEN"
+          /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
+          /d:sonar.cs.coverageReportPaths="**/coverage.cobertura.xml"
+          /d:sonar.coverage.exclusions="**/*.g.cs,**/*.gen.cs,**/Migrations/**"
+
+      - name: Restore
+        run: dotnet restore CS2InvestmentTracker.sln
+
+      - name: Build (Release)
+        run: dotnet build CS2InvestmentTracker.sln --no-restore -c Release
+
+      - name: Test (with coverage if tests exist)
+        run: |
+          set -e
+          TESTS=$(find . -name "*Tests.csproj" | wc -l)
+          if [ "$TESTS" -gt "0" ]; then
+            for proj in $(find . -name "*Tests.csproj"); do
+              dotnet test "$proj" -c Release --no-build \
+                --logger "trx;LogFileName=${proj##*/}.trx" \
+                --collect:"XPlat Code Coverage";
+            done
+          else
+            echo "Nessun progetto di test trovato: salto i test ma proseguo con l'analisi."
+          fi
+
+      - name: SonarCloud - End (Publish)
+        run: dotnet-sonarscanner end /d:sonar.login="$SONAR_TOKEN"
+
+      # --- SYNC SONARCLOUD ISSUES -> GITHUB ISSUES ---
+      - name: Fetch SonarCloud issues (all unresolved)
+        run: |
+          mkdir -p .sonar-sync
+          PAGE=1
+          > .sonar-sync/issues.jsonl
+          while true; do
+            RESP=$(curl -fsSL -u "${SONAR_TOKEN}:" \
+              "https://sonarcloud.io/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&statuses=OPEN,CONFIRMED,REOPENED&ps=500&p=${PAGE}")
+            echo "$RESP" | jq -c '.issues[]' >> .sonar-sync/issues.jsonl
+            TOTAL=$(echo "$RESP" | jq -r '.paging.total')
+            PS=$(echo "$RESP" | jq -r '.paging.pageSize')
+            GOT=$(( PAGE * PS ))
+            if [ "$GOT" -ge "$TOTAL" ] || [ "$PS" -eq 0 ]; then break; fi
+            PAGE=$(( PAGE + 1 ))
+          done
+          echo "Collected $(wc -l < .sonar-sync/issues.jsonl) SonarCloud issues"
+
+      - name: Create/skip GitHub issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = '.sonar-sync/issues.jsonl';
+            if (!fs.existsSync(path)) {
+              core.info('No Sonar issues file found. Skipping.');
+              return;
+            }
+            const lines = fs.readFileSync(path, 'utf8').trim().split('\n').filter(Boolean);
+
+            for (const line of lines) {
+              const iss = JSON.parse(line);
+              const key = iss.key; // unique Sonar issue key
+              const type = iss.type; // BUG | VULNERABILITY | CODE_SMELL | SECURITY_HOTSPOT
+              const severity = iss.severity; // INFO | MINOR | MAJOR | CRITICAL | BLOCKER
+              const msg = iss.message;
+              const comp = iss.component; // file path key
+              const lineNo = iss.line || null;
+              const rule = iss.rule;
+              const url = `https://sonarcloud.io/project/issues?open=${key}&p=${process.env.SONAR_PROJECT_KEY}&resolved=false`;
+
+              // Cerca issue esistente con questo key nel corpo (evita duplicati)
+              const q = `repo:${context.repo.owner}/${context.repo.repo} "${key}" in:body is:issue`;
+              const search = await github.rest.search.issuesAndPullRequests({ q });
+              if (search.data.total_count > 0) {
+                core.info(`Skip existing GitHub issue for Sonar ${key}`);
+                continue;
+              }
+
+              const title = `[SonarCloud][${type}][${severity}] ${msg.substring(0, 80)}`;
+              const body =
+                `**Sonar issue key:** ${key}\n` +
+                `**Type:** ${type}\n` +
+                `**Severity:** ${severity}\n` +
+                `**Rule:** ${rule}\n` +
+                `**File:** ${comp}${lineNo ? `:${lineNo}` : ''}\n\n` +
+                `Detail: ${url}\n\n` +
+                `> Generated automatically from SonarCloud API.`;
+
+              const labels = [
+                'sonarcloud',
+                `type:${type.toLowerCase()}`,
+                `severity:${severity.toLowerCase()}`
+              ];
+
+              // Ensure labels exist (create if missing)
+              for (const lbl of labels) {
+                try {
+                  await github.rest.issues.getLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: lbl
+                  });
+                } catch {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: lbl,
+                    color: 'ededed' // default gray
+                  });
+                }
+              }
+
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels
+              });
+              core.info(`Created GH issue for Sonar ${key}`);
+            }
