@@ -160,7 +160,7 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
         {
             // Retrieve category by id
             logger.LogInformation("Getting category id {Id}", categoryId);
-            var category = await categoryRepository.GetByIdAsync(categoryId) ?? throw new KeyNotFoundException("Category not found")
+            var category = await categoryRepository.GetByIdAsync(categoryId) ?? throw new KeyNotFoundException("Category not found");
             return Ok(category);
         }
         catch (Exception ex)
