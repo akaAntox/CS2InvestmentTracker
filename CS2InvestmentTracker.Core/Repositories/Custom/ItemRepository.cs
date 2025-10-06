@@ -13,6 +13,14 @@ public class ItemRepository : GenericRepository<Item>
         this.context = context;
     }
 
+    public async Task<List<Item>> GetItemsByNameAsync(string name)
+    {
+        return await context.Items
+            .AsNoTracking()
+            .Where(i => i.Name.Contains(name))
+            .ToListAsync();
+    }
+
     public async Task<List<Item>> GetItemsWithCategoryAsync()
     {
         return await context.Items

@@ -18,6 +18,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     [HttpPost]
     public async Task<ActionResult<Item>> CreateItem([FromBody] ItemCreateDto itemDto)
     {
+        // Validate the incoming DTO
         var validator = new ItemCreateDtoValidator();
         var result = validator.Validate(itemDto);
         result.AddToModelState(ModelState);
@@ -30,6 +31,15 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
 
         try
         {
+            // Check for existing item with the same name
+            var existingItem = await itemRepository.GetItemsByNameAsync(itemDto.Name);
+            if (existingItem.Count != 0)
+            {
+                logger.LogWarning("Error while adding item {Name}: Item already exists", itemDto.Name);
+                return Conflict("Item with the same name already exists.");
+            }
+
+            // Map DTO to entity
             var item = new Item
             {
                 Name = itemDto.Name,
@@ -40,6 +50,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
                 InsertDate = DateTime.Now
             };
 
+            // Save to database
             logger.LogInformation("Adding item {Name}", item.Name);
             await itemRepository.AddAsync(item);
             await eventLogRepository.NewEvent(ActionType.Insert, $"Item '{item.Name}' created.", item);
@@ -56,6 +67,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     [HttpDelete("{itemId}")]
     public async Task<ActionResult> DeleteItem(int itemId)
     {
+        // Validate the itemId
         if (itemId <= 0)
         {
             logger.LogWarning("Error while deleting item id {Id}: Invalid value", itemId);
@@ -64,6 +76,15 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
 
         try
         {
+            // Check if the item exists
+            var existingItem = await itemRepository.GetByIdAsync(itemId);
+            if (existingItem == null)
+            {
+                logger.LogWarning("Error while deleting item id {Id}: Item not found", itemId);
+                return NotFound();
+            }
+
+            // Delete the item
             logger.LogInformation("Deleting item id {Id}", itemId);
             await itemRepository.DeleteAsync(i => i.Id == itemId);
             await eventLogRepository.NewEvent(ActionType.Delete, $"Item id '{itemId}' deleted.");
@@ -79,6 +100,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     [HttpPut]
     public async Task<ActionResult<Item>> UpdateItem([FromBody] ItemUpdateDto itemDto)
     {
+        // Validate the incoming DTO
         var validator = new ItemUpdateDtoValidator();
         var result = validator.Validate(itemDto);
         result.AddToModelState(ModelState);
@@ -91,6 +113,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
 
         try
         {
+            // Check if the item exists
             var item = await itemRepository.GetByIdAsync(itemDto.Id);
             if (item == null)
             {
@@ -98,6 +121,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
                 return NotFound();
             }
 
+            // Update the item
             item.EditDate = DateTime.UtcNow;
             item.Name = itemDto.Name;
             item.Description = itemDto.Description;
@@ -122,6 +146,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     {
         try
         {
+            // Retrieve all items with their categories
             logger.LogInformation("Getting all items");
             var items = await itemRepository.GetItemsWithCategoryAsync();
             return Ok(items);
@@ -136,6 +161,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     [HttpGet("{itemId}")]
     public async Task<ActionResult<ItemReadDto>> GetItem(int itemId)
     {
+        // Validate the itemId
         if (itemId <= 0)
         {
             logger.LogWarning("Error while getting item id {Id}: Invalid value", itemId);
@@ -144,9 +170,9 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
 
         try
         {
+            // Retrieve the item by id
             logger.LogInformation("Getting item id {Id}", itemId);
             var item = await itemRepository.GetByIdAsync(itemId) ?? throw new KeyNotFoundException("Item not found");
-
             return Ok(item);
         }
         catch (Exception ex)

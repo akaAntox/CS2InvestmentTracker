@@ -19,6 +19,7 @@ public class SteamController(SteamApi steamApi, ItemRepository itemRepository, I
     {
         try
         {
+            // Fetch all items and update their prices
             logger.LogInformation("Updating prices");
             var items = await itemRepository.GetAllAsync();
             await steamApi.UpdatePricesAsync(items.AsQueryable());
@@ -35,6 +36,7 @@ public class SteamController(SteamApi steamApi, ItemRepository itemRepository, I
     [HttpPost("{itemId}")]
     public async Task<ActionResult<Item>> UpdatePrice(int itemId)
     {
+        // Validate itemId
         if (itemId <= 0)
         {
             logger.LogWarning("Error while updating price for item {Name}: Invalid item ID", itemId);
@@ -43,9 +45,11 @@ public class SteamController(SteamApi steamApi, ItemRepository itemRepository, I
 
         try
         {
+            // Fetch the item by ID
             var item = await itemRepository.GetByIdAsync(itemId);
             if (item is null) return NotFound("Item not found");
 
+            // Update the item's price
             logger.LogInformation("Updating price for item {Name}", item.Name);
             await steamApi.UpdateItemPriceAsync(item);
             return Ok(item);
