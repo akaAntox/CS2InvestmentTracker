@@ -80,7 +80,7 @@ function bindCategoriesUI() {
         const dto = {
             name: $("input[name='name']").val(),
             description: $("input[name='description']").val(),
-            ...(id ? { id: parseInt($("input[name='id']").val(), 10) } : {})
+            ...(id ? { id: Number.parseInt($("input[name='id']").val(), 10) } : {})
         };
 
         $.ajax({

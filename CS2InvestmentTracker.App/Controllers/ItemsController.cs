@@ -24,7 +24,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
 
         if (!ModelState.IsValid)
         {
-            logger.LogWarning("Error while adding item {name}: Invalid model state", itemDto.Name);
+            logger.LogWarning("Error while adding item {Name}: Invalid model state", itemDto.Name);
             return ValidationProblem(ModelState);
         }
 
@@ -40,7 +40,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
                 InsertDate = DateTime.Now
             };
 
-            logger.LogInformation("Adding item {name}", item.Name);
+            logger.LogInformation("Adding item {Name}", item.Name);
             await itemRepository.AddAsync(item);
             await eventLogRepository.NewEvent(ActionType.Insert, $"Item '{item.Name}' created.", item);
             await steamApi.UpdateItemPriceAsync(item);
@@ -48,7 +48,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while adding item {name}: {ex}", itemDto.Name, ex.Message);
+            logger.LogWarning(ex, "Error while adding item {Name}: {Exception}", itemDto.Name, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -58,20 +58,20 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     {
         if (itemId <= 0)
         {
-            logger.LogWarning("Error while deleting item id {id}: Invalid value", itemId);
+            logger.LogWarning("Error while deleting item id {Id}: Invalid value", itemId);
             return BadRequest();
         }
 
         try
         {
-            logger.LogInformation("Deleting item id {id}", itemId);
+            logger.LogInformation("Deleting item id {Id}", itemId);
             await itemRepository.DeleteAsync(i => i.Id == itemId);
             await eventLogRepository.NewEvent(ActionType.Delete, $"Item id '{itemId}' deleted.");
             return Ok();
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while deleting item id {id}: {ex}", itemId, ex.Message);
+            logger.LogWarning(ex, "Error while deleting item id {Id}: {Exception}", itemId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -85,7 +85,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
 
         if (!ModelState.IsValid)
         {
-            logger.LogWarning("Error while updating item {name}: Invalid model state", itemDto.Name);
+            logger.LogWarning("Error while updating item {Name}: Invalid model state", itemDto.Name);
             return ValidationProblem(ModelState);
         }
 
@@ -94,7 +94,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
             var item = await itemRepository.GetByIdAsync(itemDto.Id);
             if (item == null)
             {
-                logger.LogWarning("Error while updating item {name}: Item not found", itemDto.Name);
+                logger.LogWarning("Error while updating item {Name}: Item not found", itemDto.Name);
                 return NotFound();
             }
 
@@ -105,14 +105,14 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
             item.BuyPrice = itemDto.BuyPrice;
             item.CategoryId = itemDto.CategoryId;
 
-            logger.LogInformation("Updating item {name}", item.Name);
+            logger.LogInformation("Updating item {Name}", item.Name);
             await itemRepository.UpdateAsync(item);
             await eventLogRepository.NewEvent(ActionType.Update, $"Item '{item.Name}' updated.", itemDto, item);
             return Ok(item);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while updating item {name}: {ex}", itemDto.Name, ex.Message);
+            logger.LogWarning(ex, "Error while updating item {Name}: {Exception}", itemDto.Name, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -128,7 +128,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while getting all items: {ex}", ex.Message);
+            logger.LogWarning(ex, "Error while getting all items: {Exception}", ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -138,20 +138,20 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     {
         if (itemId <= 0)
         {
-            logger.LogWarning("Error while getting item id {id}: Invalid value", itemId);
+            logger.LogWarning("Error while getting item id {Id}: Invalid value", itemId);
             return BadRequest();
         }
 
         try
         {
-            logger.LogInformation("Getting item id {id}", itemId);
+            logger.LogInformation("Getting item id {Id}", itemId);
             var item = await itemRepository.GetByIdAsync(itemId) ?? throw new KeyNotFoundException("Item not found");
 
             return Ok(item);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while getting item id {id}: {ex}", itemId, ex.Message);
+            logger.LogWarning(ex, "Error while getting item id {Id}: {Exception}", itemId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }

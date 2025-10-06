@@ -43,30 +43,40 @@
                         <input type="hidden" name="id" />
                         @* NAME *@
                         <div class="col-md-6">
-                            <label class="form-label">Name</label>
-                            <input name="name" class="form-control" required />
+                            <label>
+                                Name
+                                <input name="name" class="form-control" required />
+                            </label>
                         </div>
                         @* CATEGORY *@
                         <div class="col-md-6">
-                            <label class="form-label">Category</label>
-                            <select name="categories" class="form-select col-md-6" required>
-                                <option value="" disabled selected>Select Category</option>
-                            </select>
+                            <label>
+                                Category
+                                <select name="categories" class="form-select col-md-6" required>
+                                    <option value="" disabled selected>Select Category</option>
+                                </select>
+                            </label>
                         </div>
                         @* DESCRIPTION *@
                         <div class="col-12">
-                            <label class="form-label">Description</label>
-                            <textarea name="description" class="form-control" rows="2"></textarea>
+                            <label>
+                                Description
+                                <textarea name="description" class="form-control" rows="2"></textarea>
+                            </label>
                         </div>
                         @* QUANTITY *@
                         <div class="col-md-6">
-                            <label class="form-label">Quantity</label>
-                            <input name="quantity" type="number" class="form-control" value="1" min="1" required />
+                            <label>
+                                Quantity
+                                <input name="quantity" type="number" class="form-control" value="1" min="1" required />
+                            </label>
                         </div>
                         @* BUY PRICE *@
                         <div class="col-md-6">
-                            <label class="form-label">Buy Price</label>
-                            <input name="buyPrice" type="number" step="0.01" class="form-control" value="0.01" />
+                            <label>
+                                Buy Price
+                                <input name="buyPrice" type="number" step="0.01" class="form-control" value="0.01" />
+                            </label>
                         </div>
                     </div>
 

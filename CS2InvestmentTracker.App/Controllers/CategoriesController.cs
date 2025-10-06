@@ -21,7 +21,7 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
 
         if (!ModelState.IsValid)
         {
-            logger.LogWarning("Error while adding category {name}: Invalid model state", categoryDto.Name);
+            logger.LogWarning("Error while adding category {Name}: Invalid model state", categoryDto.Name);
             return ValidationProblem(ModelState);
         }
 
@@ -33,14 +33,14 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
                 Description = categoryDto.Description
             };
 
-            logger.LogInformation("Adding category {name}", category.Name);
+            logger.LogInformation("Adding category {Name}", category.Name);
             await categoryRepository.AddAsync(category);
             await eventRepository.NewEvent(ActionType.Insert, $"Category '{category.Name}' created.", category);
             return Ok(category);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while adding category {name}: {ex}", categoryDto.Name, ex.Message);
+            logger.LogWarning(ex, "Error while adding category {Name}: {Exception}", categoryDto.Name, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -50,20 +50,20 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
     {
         if (categoryId <= 0)
         {
-            logger.LogWarning("Error while deleting category id {id}: Invalid value", categoryId);
+            logger.LogWarning("Error while deleting category id {Id}: Invalid value", categoryId);
             return BadRequest();
         }
 
         try
         {
-            logger.LogInformation("Deleting category id {id}", categoryId);
+            logger.LogInformation("Deleting category id {Id}", categoryId);
             await categoryRepository.DeleteAsync(c => c.Id == categoryId);
             await eventRepository.NewEvent(ActionType.Delete, $"Category id {categoryId} deleted.");
             return Ok();
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while deleting category id {id}: {ex}", categoryId, ex.Message);
+            logger.LogWarning(ex, "Error while deleting category id {Id}: {Exception}", categoryId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -77,7 +77,7 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
 
         if (!ModelState.IsValid)
         {
-            logger.LogWarning("Error while updating category {name}: Invalid model state", categoryDto.Name);
+            logger.LogWarning("Error while updating category {Name}: Invalid model state", categoryDto.Name);
             return ValidationProblem(ModelState);
         }
 
@@ -86,21 +86,21 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
             var category = await categoryRepository.GetByIdAsync(categoryDto.Id);
             if (category == null)
             {
-                logger.LogWarning("Error while updating category {name}: Category not found", categoryDto.Name);
+                logger.LogWarning("Error while updating category {Name}: Category not found", categoryDto.Name);
                 return NotFound();
             }
 
             category.Name = categoryDto.Name;
             category.Description = categoryDto.Description;
 
-            logger.LogInformation("Updating category {name}", category.Name);
+            logger.LogInformation("Updating category {Name}", category.Name);
             await categoryRepository.UpdateAsync(category);
             await eventRepository.NewEvent(ActionType.Update, $"Category {category.Name} updated.", categoryDto, category);
             return Ok(category);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while updating category {name}: {ex}", categoryDto.Name, ex.Message);
+            logger.LogWarning(ex, "Error while updating category {Name}: {Exception}", categoryDto.Name, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -116,7 +116,7 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while getting all categories: {ex}", ex.Message);
+            logger.LogWarning(ex, "Error while getting all categories: {Exception}", ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -126,20 +126,20 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
     {
         if (categoryId <= 0)
         {
-            logger.LogWarning("Error while getting category id {id}: Invalid value", categoryId);
+            logger.LogWarning("Error while getting category id {Id}: Invalid value", categoryId);
             return BadRequest();
         }
 
         try
         {
-            logger.LogInformation("Getting category id {id}", categoryId);
+            logger.LogInformation("Getting category id {Id}", categoryId);
             var category = await categoryRepository.GetByIdAsync(categoryId) ?? throw new KeyNotFoundException("Category not found");
 
             return Ok(category);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Error while getting category id {id}: {ex}", categoryId, ex.Message);
+            logger.LogWarning(ex, "Error while getting category id {Id}: {Exception}", categoryId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }

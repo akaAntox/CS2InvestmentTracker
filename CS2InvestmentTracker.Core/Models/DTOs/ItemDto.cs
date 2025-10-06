@@ -4,7 +4,7 @@ namespace CS2InvestmentTracker.Core.Models.DTOs;
 
 public class ItemDto
 {
-    public string Name { get; set; }
+    public required string Name { get; set; }
     public string? Description { get; set; }
     public int Quantity { get; set; } = 1;
     public decimal BuyPrice { get; set; } = 0;

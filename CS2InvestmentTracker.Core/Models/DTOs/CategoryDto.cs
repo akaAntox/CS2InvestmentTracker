@@ -2,8 +2,8 @@ namespace CS2InvestmentTracker.Core.Models.DTOs;
 
 public class CategoryDto
 {
-    public string Name { get; set; }
-    public string Description { get; set; }
+    public required string Name { get; set; }
+    public required string Description { get; set; }
 }
 
 public class CategoryCreateDto : CategoryDto { }

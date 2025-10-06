@@ -5,7 +5,6 @@ function initBsTooltips(scope) {
     $els.each(function () {
         const existing = bootstrap.Tooltip.getInstance(this);
         if (existing) existing.dispose();
-        new bootstrap.Tooltip(this, { container: 'body', placement: 'top' });
     });
 }
 
@@ -23,9 +22,9 @@ function initItemsTable() {
             //{ data: 'category.name' },
             { data: 'name' },
             { data: 'quantity' },
-            { data: 'buyPrice', render: (d) => d != null ? d.toFixed(2) + ' €' : '' },
-            { data: 'minSellPrice', render: (d) => d != null ? d.toFixed(2) + ' €' : '' },
-            { data: 'netProfit', render: (d) => d != null ? d.toFixed(3) + ' €' : '' },
+            { data: 'buyPrice', render: (d) => d.toFixed(2) + ' €' },
+            { data: 'minSellPrice', render: (d) => d.toFixed(2) + ' €' },
+            { data: 'netProfit', render: (d) => d.toFixed(3) + ' €' },
             //{ data: 'avgSellPrice' },
             {
                 data: null,
@@ -86,9 +85,9 @@ function initItemsForm() {
             const opt = new Option('-- Select Category --', '');
             opt.disabled = true;
             select.append(opt);
-            data.forEach(cat => {
+            for (const cat of data) {
                 select.append(new Option(cat.name, cat.id));
-            });
+            }
         },
         error: function (xhr) {
             console.error(xhr.responseText);
@@ -172,11 +171,11 @@ function bindItemsUI() {
         const id = $("input[name='id']").val();
         const dto = {
             name: $("input[name='name']").val(),
-            categoryId: parseInt($("select[name='categories']").val()) || 0,
+            categoryId: Number.parseInt($("select[name='categories']").val()) || 0,
             description: $("textarea[name='description']").val(),
-            quantity: parseInt($("input[name='quantity']").val(), 10) || 0,
-            buyPrice: parseFloat($("input[name='buyPrice']").val()) || 0,
-            ...(id ? { id: parseInt($("input[name='id']").val(), 10) } : {})
+            quantity: Number.parseInt($("input[name='quantity']").val(), 10) || 0,
+            buyPrice: Number.parseFloat($("input[name='buyPrice']").val()) || 0,
+            ...(id ? { id: Number.parseInt($("input[name='id']").val(), 10) } : {})
         };
 
         $.ajax({
