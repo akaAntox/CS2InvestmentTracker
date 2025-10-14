@@ -23,6 +23,7 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 builder.Services.AddScoped<ItemRepository>();
 builder.Services.AddScoped<CategoryRepository>();
 builder.Services.AddScoped<EventLogRepository>();
+builder.Services.AddScoped<SteamMarketPricesRepository>();
 
 // Add singletons.
 builder.Services.AddSingleton<HttpClient>();
