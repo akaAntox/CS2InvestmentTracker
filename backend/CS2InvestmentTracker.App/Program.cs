@@ -28,6 +28,13 @@ builder.Services.AddScoped<EventLogRepository>();
 builder.Services.AddSingleton<HttpClient>();
 builder.Services.AddSingleton<SteamApi>();
 
+// Add CORS policy to allow all origins, methods, and headers.
+const string FrontendCorsPolicy = "FrontendCorsPolicy";
+builder.Services.AddCors(options => options.AddPolicy(FrontendCorsPolicy, policy =>
+        policy.WithOrigins("http://localhost:3000")
+            .AllowAnyMethod()
+            .AllowAnyHeader()));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -42,6 +49,7 @@ else
     app.UseHsts();
 }
 
+app.UseCors(FrontendCorsPolicy);
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
