@@ -1,33 +1,43 @@
-name: CI (build, test, SonarCloud)
+name: backend-ci (build, test, SonarCloud)
 
 on:
   push:
     branches: [ main, master, dev ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [ main, master, dev ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
 
 jobs:
   build_test_analyze:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write  # per permettere la PR decoration di SonarCloud
+      pull-requests: write
 
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_PROJECT_KEY: akaAntox_CS2InvestmentTracker
+      SONAR_PROJECT_KEY: akaAntox_CS2InvestmentTracker_Backend
       SONAR_ORG: akaantox
+
+    defaults:
+      run:
+        working-directory: backend
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # necessario per "new code" su PR
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '9.0.x'     # usa 8.0.x se il progetto è ancora su 8
 
       - name: Install SonarScanner for .NET
         run: dotnet tool install --global dotnet-sonarscanner
@@ -60,7 +70,10 @@ jobs:
             for proj in $(find . -name "*Tests.csproj"); do
               dotnet test "$proj" -c Release --no-build \
                 --logger "trx;LogFileName=${proj##*/}.trx" \
-                --collect:"XPlat Code Coverage";
+                --collect:"XPlat Code Coverage" \
+                /p:CollectCoverage=true \
+                /p:CoverletOutputFormat=cobertura \
+                /p:CoverletOutput=./TestResults/coverage;
             done
           else
             echo "Nessun progetto di test trovato: salto i test ma proseguo con l'analisi."
@@ -73,7 +86,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tests-and-coverage
+          name: backend-tests-and-coverage
           path: |
             **/TestResults/*.trx
             **/coverage.cobertura.xml
