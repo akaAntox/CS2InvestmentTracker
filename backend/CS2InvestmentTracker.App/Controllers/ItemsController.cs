@@ -6,6 +6,7 @@ using CS2InvestmentTracker.Core.Validators.DTOs;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace CS2InvestmentTracker.App.Controllers;
 
@@ -16,6 +17,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     private readonly SteamApi steamApi = steamApi;
 
     [HttpPost]
+    [SwaggerOperation(Summary = "Create a new item")]
     public async Task<ActionResult<Item>> CreateItem([FromBody] ItemCreateDto itemDto)
     {
         // Validate the incoming DTO
@@ -65,6 +67,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     }
 
     [HttpDelete("{itemId}")]
+    [SwaggerOperation(Summary = "Delete an item by its ID")]
     public async Task<ActionResult> DeleteItem(int itemId)
     {
         // Validate the itemId
@@ -98,6 +101,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     }
 
     [HttpPut]
+    [SwaggerOperation(Summary = "Update an existing item")]
     public async Task<ActionResult<Item>> UpdateItem([FromBody] ItemUpdateDto itemDto)
     {
         // Validate the incoming DTO
@@ -142,6 +146,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     }
 
     [HttpGet]
+    [SwaggerOperation(Summary = "Get all items with their categories")]
     public async Task<ActionResult<IEnumerable<ItemReadDto>>> GetItems()
     {
         try
@@ -159,6 +164,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
     }
 
     [HttpGet("{itemId}")]
+    [SwaggerOperation(Summary = "Get an item by its ID")]
     public async Task<ActionResult<ItemReadDto>> GetItem(int itemId)
     {
         // Validate the itemId

@@ -5,6 +5,7 @@ using CS2InvestmentTracker.Core.Validators.DTOs;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace CS2InvestmentTracker.App.Controllers;
 
@@ -13,6 +14,7 @@ namespace CS2InvestmentTracker.App.Controllers;
 public class CategoriesController(ILogger<CategoriesController> logger, CategoryRepository categoryRepository, EventLogRepository eventRepository, UserManager<IdentityUser> userManager) : ControllerBase
 {
     [HttpPost]
+    [SwaggerOperation(Summary = "Create a new category")]
     public async Task<ActionResult<Category>> CreateCategory([FromBody] CategoryCreateDto categoryDto)
     {
         // Validate the incoming DTO
@@ -57,6 +59,7 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
     }
 
     [HttpDelete("{categoryId}")]
+    [SwaggerOperation(Summary = "Delete a category by ID")]
     public async Task<ActionResult> DeleteCategory(int categoryId)
     {
         // Validate categoryId
@@ -90,6 +93,7 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
     }
 
     [HttpPut]
+    [SwaggerOperation(Summary = "Update an existing category")]
     public async Task<ActionResult<Category>> UpdateCategory([FromBody] CategoryUpdateDto categoryDto)
     {
         // Validate the incoming DTO
@@ -130,6 +134,7 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
     }
 
     [HttpGet]
+    [SwaggerOperation(Summary = "Get all categories")]
     public async Task<ActionResult<IEnumerable<CategoryReadDto>>> GetCategories()
     {
         try
@@ -147,6 +152,7 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
     }
 
     [HttpGet("{categoryId}")]
+    [SwaggerOperation(Summary = "Get a category by ID")]
     public async Task<ActionResult<CategoryReadDto>> GetCategory(int categoryId)
     {
         // Validate categoryId

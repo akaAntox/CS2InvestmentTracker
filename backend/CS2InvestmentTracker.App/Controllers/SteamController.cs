@@ -3,6 +3,7 @@ using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace CS2InvestmentTracker.App.Controllers;
 
@@ -15,6 +16,7 @@ public class SteamController(SteamApi steamApi, ItemRepository itemRepository, I
     private readonly ILogger<SteamController> logger = logger;
 
     [HttpPost]
+    [SwaggerOperation(Summary = "Update prices for all items")]
     public async Task<ActionResult> UpdatePrices()
     {
         try
@@ -34,6 +36,7 @@ public class SteamController(SteamApi steamApi, ItemRepository itemRepository, I
     }
 
     [HttpPost("{itemId}")]
+    [SwaggerOperation(Summary = "Update price for a specific item by ID")]
     public async Task<ActionResult<Item>> UpdatePrice(int itemId)
     {
         // Validate itemId
