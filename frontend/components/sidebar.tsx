@@ -15,9 +15,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/", icon: <Home className="w-5 h-5" /> },
-  { label: "Articoli", href: "/items", icon: <Package className="w-5 h-5" /> },
-  { label: "Categorie", href: "/categories", icon: <Tag className="w-5 h-5" /> },
-  { label: "Eventi", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+  { label: "Items", href: "/items", icon: <Package className="w-5 h-5" /> },
+  { label: "Categories", href: "/categories", icon: <Tag className="w-5 h-5" /> },
+  { label: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
 ]
 
 export function Sidebar() {

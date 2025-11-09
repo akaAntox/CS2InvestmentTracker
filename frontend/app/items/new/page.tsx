@@ -23,7 +23,7 @@ export default function NewItemPage() {
               <ChevronLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Nuovo Articolo</h1>
+              <h1 className="text-3xl font-bold text-foreground">New Item</h1>
             </div>
           </div>
         </div>

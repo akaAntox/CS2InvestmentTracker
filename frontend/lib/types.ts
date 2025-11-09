@@ -4,8 +4,8 @@ export interface Item {
   name: string
   description?: string
   categoryId: string
-  price: number
-  currentMarketPrice?: number
+  buyPrice: number
+  minSellPrice?: number
   insertDate: string
   editDate?: string
 }
@@ -14,7 +14,7 @@ export interface ItemCreate {
   name: string
   description?: string
   categoryId: string
-  price: number
+  buyPrice: number
 }
 
 export interface ItemUpdate extends ItemCreate {}
@@ -35,17 +35,17 @@ export interface CategoryCreate {
 
 export interface CategoryUpdate extends CategoryCreate {}
 
-// Steam market price types
+// Steam market buyPrice types
 export interface SteamMarketPrice {
   id: string
   itemId: string
-  price: number
+  buyPrice: number
   currency: string
   trackDate: string
 }
 
 export interface SteamPriceUpdate {
-  price: number
+  buyPrice: number
   currency?: string
 }
 

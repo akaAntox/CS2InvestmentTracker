@@ -1,4 +1,5 @@
-﻿using CS2InvestmentTracker.Core.Models;
+﻿using CS2InvestmentTracker.Core.Exceptions;
+using CS2InvestmentTracker.Core.Models;
 using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -25,6 +26,16 @@ public class SteamController(SteamApi steamApi, ItemRepository itemRepository, I
             logger.LogInformation("Updating prices");
             var items = await itemRepository.GetAllAsync();
             await steamApi.UpdatePricesAsync(items.AsQueryable());
+        }
+        catch (ItemNotFoundException ex)
+        {
+            logger.LogWarning(ex, "Item not found while updating prices: {Exception}", ex.Message);
+            return NotFound("One or more items not found");
+        }
+        catch (ApiResponseException ex)
+        {
+            logger.LogWarning(ex, "API response error while updating prices: {Exception}", ex.Message);
+            return StatusCode(StatusCodes.Status502BadGateway, "Error from external API");
         }
         catch (Exception ex)
         {

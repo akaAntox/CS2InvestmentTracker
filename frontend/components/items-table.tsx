@@ -20,18 +20,21 @@ import { formatCurrency, formatDate } from "@/lib/format-utils"
 import { itemsApi, ApiError } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import { Edit, Trash2 } from "lucide-react"
+import { on } from "events"
 
 interface ItemsTableProps {
   items: any[]
   categories: any[]
   isLoading: boolean
   onDelete: () => void
+  onEdit: () => void
 }
 
-export function ItemsTable({ items, categories, isLoading, onDelete }: ItemsTableProps) {
+export function ItemsTable({ items, categories, isLoading, onDelete, onEdit }: Readonly<ItemsTableProps>) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState<string | null>(null)
   const { toast } = useToast()
 
   const filteredItems = (items || []).filter((item: any) => {
@@ -40,21 +43,46 @@ export function ItemsTable({ items, categories, isLoading, onDelete }: ItemsTabl
     return matchesSearch && matchesCategory
   })
 
+  const handleEdit = async (item: any) => {
+    setIsEditing(item.id)
+    try {
+      await itemsApi.update(item.id, item)
+      toast({
+        title: "Success",
+        description: "Item updated",
+      })
+      onEdit()
+    } catch (error) {
+      if (error instanceof ApiError) {
+        const messages = Object.entries(error.errors || {})
+          .flatMap(([_, msgs]: any) => msgs)
+          .join(", ")
+        toast({
+          title: "Error",
+          description: messages || "Error during update",
+          variant: "destructive",
+        })
+      }
+    } finally {
+      setIsEditing(null)
+    }
+  }
+  
   const handleDelete = async (id: string) => {
     setIsDeleting(id)
     try {
       await itemsApi.delete(id)
       toast({
-        title: "Successo",
-        description: "Articolo eliminato",
+        title: "Success",
+        description: "Item deleted",
       })
       onDelete()
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 409) {
           toast({
-            title: "Errore",
-            description: "Articolo già utilizzato, impossibile eliminare",
+            title: "Error",
+            description: "Item already in use, unable to delete",
             variant: "destructive",
           })
         } else {
@@ -62,8 +90,8 @@ export function ItemsTable({ items, categories, isLoading, onDelete }: ItemsTabl
             .flatMap(([_, msgs]: any) => msgs)
             .join(", ")
           toast({
-            title: "Errore",
-            description: messages || "Errore durante l'eliminazione",
+            title: "Error",
+            description: messages || "Error during deletion",
             variant: "destructive",
           })
         }
@@ -88,7 +116,7 @@ export function ItemsTable({ items, categories, isLoading, onDelete }: ItemsTabl
       {/* Filters */}
       <div className="flex gap-3">
         <Input
-          placeholder="Cerca articoli..."
+          placeholder="Search items..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-1"
@@ -98,7 +126,7 @@ export function ItemsTable({ items, categories, isLoading, onDelete }: ItemsTabl
           onChange={(e) => setSelectedCategory(e.target.value)}
           className="px-3 py-2 rounded-lg bg-secondary border border-border text-foreground"
         >
-          <option value="all">Tutte le categorie</option>
+          <option value="all">All Categories</option>
           {categories?.map((cat: any) => (
             <option key={cat.id} value={cat.id}>
               {cat.name}
@@ -112,12 +140,13 @@ export function ItemsTable({ items, categories, isLoading, onDelete }: ItemsTabl
         <Table>
           <TableHeader className="bg-secondary">
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead className="text-right">Prezzo</TableHead>
-              <TableHead className="text-right">Prezzo Market</TableHead>
-              <TableHead className="text-right">Data</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead className="text-right">Buy Price</TableHead>
+              <TableHead className="text-right">Min Steam Price</TableHead>
+              <TableHead className="text-right">Avg Steam Price</TableHead>
+              <TableHead className="text-right">Last Update</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -136,20 +165,29 @@ export function ItemsTable({ items, categories, isLoading, onDelete }: ItemsTabl
                     <TableCell>
                       <Badge variant="outline">{category?.name || "N/A"}</Badge>
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.price)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(item.buyPrice)}</TableCell>
                     <TableCell className="text-right text-accent">
-                      {item.currentMarketPrice ? formatCurrency(item.currentMarketPrice) : "--"}
+                      {item.minSellPrice ? formatCurrency(item.minSellPrice) : "--"}
+                    </TableCell>
+                    <TableCell className="text-right text-accent">
+                      {item.avgSellPrice ? formatCurrency(item.avgSellPrice) : "--"}
                     </TableCell>
                     <TableCell className="text-right text-xs text-muted-foreground">
-                      {formatDate(item.insertDate)}
+                      {item.editDate ? formatDate(item.editDate) : formatDate(item.insertDate)}
                     </TableCell>
+                    {/* <TableCell className="text-right text-xs text-muted-foreground">
+                      {formatDate(item.editDate)}
+                    </TableCell> */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/items/${item.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </Link>
+                        <Button 
+                          onClick={() => handleEdit(item)}
+                          disabled={isEditing === item.id}
+                          variant="ghost" 
+                          size="sm"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
@@ -157,18 +195,18 @@ export function ItemsTable({ items, categories, isLoading, onDelete }: ItemsTabl
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
-                            <AlertDialogTitle>Elimina articolo</AlertDialogTitle>
+                            <AlertDialogTitle>Delete Item</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Sei sicuro di voler eliminare "{item.name}"? Questa azione non può essere annullata.
+                              Are you sure you want to delete "{item.name}"? This action cannot be undone.
                             </AlertDialogDescription>
                             <div className="flex gap-2">
-                              <AlertDialogCancel>Annulla</AlertDialogCancel>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleDelete(item.id)}
                                 disabled={isDeleting === item.id}
                                 className="bg-destructive hover:bg-destructive/90"
                               >
-                                {isDeleting === item.id ? "Eliminazione..." : "Elimina"}
+                                {isDeleting === item.id ? "Deleting..." : "Delete"}
                               </AlertDialogAction>
                             </div>
                           </AlertDialogContent>

@@ -37,8 +37,8 @@ export default function CategoriesPage() {
         <div className="sticky top-0 z-10 bg-background border-b border-border p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Categorie</h1>
-              <p className="text-muted-foreground text-sm mt-1">Gestione delle categorie prodotto</p>
+              <h1 className="text-3xl font-bold text-foreground">Categories</h1>
+              <p className="text-muted-foreground text-sm mt-1">Items category management</p>
             </div>
             <Button
               onClick={() => {
@@ -48,7 +48,7 @@ export default function CategoriesPage() {
               className="bg-accent hover:bg-accent/90"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Nuova Categoria
+              New Category
             </Button>
           </div>
         </div>

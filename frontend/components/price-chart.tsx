@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 interface PriceData {
   date: string
-  price: number
-  marketPrice?: number
+  buyPrice: number
+  minSellPrice?: number
 }
 
 interface PriceChartProps {
@@ -22,7 +22,7 @@ export function PriceChart({
   isLoading = false,
   title = "Andamento Prezzi",
   height = 300,
-}: PriceChartProps) {
+}: Readonly<PriceChartProps>) {
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return []
 
@@ -31,10 +31,10 @@ export function PriceChart({
         month: "short",
         day: "numeric",
       }),
-      price: Number.parseFloat(item.price?.toString() || "0"),
-      marketPrice:
-        item.currentMarketPrice || item.marketPrice
-          ? Number.parseFloat((item.currentMarketPrice || item.marketPrice)?.toString() || "0")
+      buyPrice: Number.parseFloat(item.buyPrice?.toString() || "0"),
+      minSellPrice:
+        item.minSellPrice || item.minSellPrice
+          ? Number.parseFloat((item.minSellPrice || item.minSellPrice)?.toString() || "0")
           : null,
     }))
   }, [data])
@@ -72,18 +72,18 @@ export function PriceChart({
               />
               <Line
                 type="monotone"
-                dataKey="price"
+                dataKey="buyPrice"
                 stroke="var(--color-chart-1)"
                 name="Prezzo Base"
                 strokeWidth={2}
                 dot={{ fill: "var(--color-chart-1)", r: 4 }}
               />
-              {chartData.some((d: any) => d.marketPrice) && (
+              {chartData.some((d: any) => d.minSellPrice) && (
                 <Line
                   type="monotone"
-                  dataKey="marketPrice"
+                  dataKey="minSellPrice"
                   stroke="var(--color-chart-2)"
-                  name="Prezzo Market"
+                  name="Prezzo Minimo di Vendita"
                   strokeWidth={2}
                   dot={{ fill: "var(--color-chart-2)", r: 4 }}
                 />

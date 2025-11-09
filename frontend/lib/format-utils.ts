@@ -20,7 +20,7 @@ export function formatError(error: unknown): string {
   if (error instanceof Error) {
     return error.message
   }
-  return "Un errore sconosciuto si è verificato"
+  return "Unknown error occurred"
 }
 
 export function getErrorMessages(errors?: Record<string, string[]>): string[] {

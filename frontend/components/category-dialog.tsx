@@ -38,10 +38,10 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Categ
     try {
       if (category) {
         await categoriesApi.update(category.id, formData)
-        toast({ title: "Successo", description: "Categoria aggiornata" })
+        toast({ title: "Success", description: "Category updated" })
       } else {
         await categoriesApi.create(formData)
-        toast({ title: "Successo", description: "Categoria creata" })
+        toast({ title: "Success", description: "Category created" })
       }
       onSubmit()
       onOpenChange(false)
@@ -52,13 +52,13 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Categ
           setErrors(error.errors)
         } else if (error.status === 409) {
           toast({
-            title: "Errore",
-            description: "Categoria già esistente",
+            title: "Error",
+            description: "Category already exists",
             variant: "destructive",
           })
         } else {
           toast({
-            title: "Errore",
+            title: "Error",
             description: error.message,
             variant: "destructive",
           })
@@ -75,9 +75,9 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Categ
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-border">
         <DialogHeader>
-          <DialogTitle>{category ? "Modifica Categoria" : "Nuova Categoria"}</DialogTitle>
+          <DialogTitle>{category ? "Edit Category" : "New Category"}</DialogTitle>
           <DialogDescription>
-            {category ? "Aggiorna i dettagli della categoria" : "Inserisci i dettagli della nuova categoria"}
+            {category ? "Update the category details" : "Enter the details of the new category"}
           </DialogDescription>
         </DialogHeader>
 
@@ -96,34 +96,34 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Categ
           )}
 
           <div>
-            <Label htmlFor="cat-name">Nome *</Label>
+            <Label htmlFor="cat-name">Name *</Label>
             <Input
               id="cat-name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Nome categoria"
+              placeholder="Category name"
               className="mt-2"
             />
           </div>
 
           <div>
-            <Label htmlFor="cat-description">Descrizione</Label>
+            <Label htmlFor="cat-description">Description</Label>
             <Textarea
               id="cat-description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Descrizione opzionale"
+              placeholder="Optional description"
               className="mt-2"
             />
           </div>
 
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Annulla
+              Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/90">
               {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {category ? "Aggiorna" : "Crea"}
+              {category ? "Update" : "Create"}
             </Button>
           </div>
         </form>

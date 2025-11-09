@@ -14,8 +14,8 @@ import { Activity, TrendingUp, Package, Tag, Loader2 } from "lucide-react"
 interface Item {
   id: string
   name: string
-  price: number
-  currentMarketPrice?: number
+  minSellPrice: number
+  minSellPrice?: number
 }
 
 interface Category {
@@ -34,7 +34,7 @@ export default function Home() {
   const totalItems = items?.length || 0
   const totalCategories = categories?.length || 0
   const averagePrice = items?.length
-    ? items.reduce((sum: number, item: Item) => sum + (item.price || 0), 0) / items.length
+    ? items.reduce((sum: number, item: Item) => sum + (item.minSellPrice || 0), 0) / items.length
     : 0
 
   const handleUpdatePrices = async () => {
@@ -47,8 +47,8 @@ export default function Home() {
       })
     } catch (error) {
       toast({
-        title: "Errore",
-        description: "Errore durante l'aggiornamento dei prezzi",
+        title: "Error",
+        description: "Error during price update",
         variant: "destructive",
       })
     } finally {
@@ -64,11 +64,11 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-              <p className="text-muted-foreground text-sm mt-1">Benvenuto nel pannello di amministrazione</p>
+              <p className="text-muted-foreground text-sm mt-1">Welcome to the admin panel</p>
             </div>
             <Button onClick={handleUpdatePrices} disabled={isUpdating} className="bg-primary hover:bg-primary/90">
               {isUpdating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Aggiorna Prezzi
+              Update Prices
             </Button>
           </div>
         </div>
@@ -78,29 +78,29 @@ export default function Home() {
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard
-                title="Articoli Totali"
-                description="Numero di articoli nel sistema"
+                title="Total Items"
+                description="Number of items in the system"
                 value={totalItems}
                 icon={<Package className="w-5 h-5" />}
                 isLoading={itemsLoading}
               />
               <KpiCard
-                title="Categorie"
-                description="Numero di categorie"
+                title="Categories"
+                description="Number of categories"
                 value={totalCategories}
                 icon={<Tag className="w-5 h-5" />}
                 isLoading={categoriesLoading}
               />
               <KpiCard
-                title="Prezzo Medio"
-                description="Media prezzi articoli"
+                title="Average Price"
+                description="Average item prices"
                 value={formatCurrency(averagePrice)}
                 icon={<TrendingUp className="w-5 h-5" />}
                 isLoading={itemsLoading}
               />
               <KpiCard
-                title="Ultimi Aggiornamenti"
-                description="Da Steam Market API"
+                title="Latest Updates"
+                description="From Steam Market API"
                 value="--"
                 icon={<Activity className="w-5 h-5" />}
                 isLoading={false}
@@ -110,22 +110,22 @@ export default function Home() {
             {/* Quick Stats Card */}
             <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle>Statistiche Rapide</CardTitle>
-                <CardDescription>Panoramica della gestione dati</CardDescription>
+                <CardTitle>Quick Stats</CardTitle>
+                <CardDescription>Overview of data management</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-secondary rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Articoli Attivi</p>
+                    <p className="text-sm text-muted-foreground mb-1">Active Items</p>
                     <p className="text-2xl font-bold text-foreground">{totalItems}</p>
                   </div>
                   <div className="p-4 bg-secondary rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Categorie</p>
+                    <p className="text-sm text-muted-foreground mb-1">Categories</p>
                     <p className="text-2xl font-bold text-foreground">{totalCategories}</p>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Usa il pulsante "Aggiorna Prezzi" per sincronizzare i prezzi da Steam Market.
+                  Use the "Update Prices" button to sync prices from Steam Market.
                 </p>
               </CardContent>
             </Card>

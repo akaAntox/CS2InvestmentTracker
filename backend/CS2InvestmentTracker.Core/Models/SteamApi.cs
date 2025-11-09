@@ -23,27 +23,27 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory, ILogger<SteamApi
             }
             catch (HttpRequestException ex)
             {
-                logger.LogError(ex, "Richiesta HTTP non valida: {Message}", ex.Message);
+                logger.LogError(ex, "Invalid HTTP request: {Message}", ex.Message);
             }
             catch (JsonException ex)
             {
-                logger.LogError(ex, "Errore durante la deserializzazione della risposta JSON: {Message}", ex.Message);
+                logger.LogError(ex, "Error deserializing JSON response: {Message}", ex.Message);
             }
             catch (ApiResponseException ex)
             {
-                logger.LogError(ex, "Errore durante la lettura della risposta API: {Message}", ex.Message);
+                logger.LogError(ex, "Error reading API response: {Message}", ex.Message);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Errore durante l'aggiornamento dei prezzi per l'elemento {ItemName}: {Message}",
+                logger.LogError(ex, "Error updating prices for item {ItemName}: {Message}",
                                 item.Name, ex.Message);
             }
         }
 
-        logger.LogInformation("Aggiornamento prezzi completato");
+        logger.LogInformation("Price update completed");
     }
 
-    public async Task UpdateItemPriceAsync(Item item)
+    public async Task UpdateItemPriceAsync(Item item, bool createItemInDb = false)
     {
         HttpClient web = new();
 
@@ -56,7 +56,9 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory, ILogger<SteamApi
         var responseBody = await response.Content.ReadAsStringAsync();
         var apiResponse = JsonSerializer.Deserialize<SteamApiResponse>(responseBody);
 
-        if (apiResponse == null || !apiResponse.Success) throw new ApiResponseException($"Risposta API non valida");
+        if (apiResponse == null || !apiResponse.Success) throw new ApiResponseException($"Invalid API response");
+        if (apiResponse.LowestPrice == 0 && apiResponse.MedianPrice == 0 && apiResponse.Volume == 0)
+            throw new ItemNotFoundException($"No price data available for item '{item.Name}'");
 
         item.MinSellPrice = apiResponse.LowestPrice;
         item.AvgSellPrice = apiResponse.MedianPrice;
@@ -64,6 +66,6 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory, ILogger<SteamApi
 
         var provider = serviceScopeFactory.CreateScope().ServiceProvider;
         var itemRepository = provider.GetRequiredService<ItemRepository>();
-        await itemRepository.UpdateAsync(item);
+        await (createItemInDb ? itemRepository.AddAsync(item) : itemRepository.UpdateAsync(item));
     }
 }

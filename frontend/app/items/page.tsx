@@ -1,15 +1,17 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { ItemsTable } from "@/components/items-table"
 import { Button } from "@/components/ui/button"
 import { useApi } from "@/hooks/use-api"
 import { itemsApi, categoriesApi } from "@/lib/api-client"
 import { Plus } from "lucide-react"
+import { ItemDialog } from "@/components/item-dialog"
 
 export default function ItemsPage() {
-  const router = useRouter()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<any | null>(null)
 
   const {
     data: items = [],
@@ -19,6 +21,27 @@ export default function ItemsPage() {
 
   const { data: categories = [] } = useApi("categories-list", () => categoriesApi.getAll())
 
+  const handleEdit = (item: any) => {
+    setSelectedItem(item)
+    setDialogOpen(true)
+  }
+
+  const handleNew = () => {
+    setSelectedItem(null)
+    setDialogOpen(true)
+  }
+
+  const handleClose = () => {
+    setDialogOpen(false)
+    setSelectedItem(null)
+  }
+
+  const handleSubmit = () => {
+    // ricarica la lista e chiudi
+    mutateItems()
+    handleClose()
+  }
+
   return (
     <DashboardLayout>
       <div className="flex flex-col h-full">
@@ -26,20 +49,35 @@ export default function ItemsPage() {
         <div className="sticky top-0 z-10 bg-background border-b border-border p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Articoli</h1>
-              <p className="text-muted-foreground text-sm mt-1">Gestione completa dei tuoi articoli</p>
+              <h1 className="text-3xl font-bold text-foreground">Items</h1>
+              <p className="text-muted-foreground text-sm mt-1">Complete management of your items</p>
             </div>
-            <Button onClick={() => router.push("/items/new")} className="bg-accent hover:bg-accent/90">
+            <Button onClick={handleNew} className="bg-accent hover:bg-accent/90">
               <Plus className="w-4 h-4 mr-2" />
-              Nuovo Articolo
+              New Item
             </Button>
           </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
-          <ItemsTable items={items} categories={categories} isLoading={itemsLoading} onDelete={() => mutateItems()} />
+          <ItemsTable
+            items={items}
+            categories={categories}
+            isLoading={itemsLoading}
+            onDelete={() => mutateItems()}
+            onEdit={handleEdit}
+          />
         </div>
+
+        {/* Dialog */}
+        <ItemDialog
+          open={dialogOpen}
+          onOpenChange={handleClose}
+          item={selectedItem}
+          categories={categories}
+          onSubmit={handleSubmit}
+        />
       </div>
     </DashboardLayout>
   )

@@ -1,4 +1,5 @@
-﻿using CS2InvestmentTracker.Core.Models;
+﻿using CS2InvestmentTracker.Core.Exceptions;
+using CS2InvestmentTracker.Core.Models;
 using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Models.DTOs;
 using CS2InvestmentTracker.Core.Repositories.Custom;
@@ -52,12 +53,22 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
                 InsertDate = DateTime.Now
             };
 
-            // Save to database
-            logger.LogInformation("Adding item {Name}", item.Name);
-            await itemRepository.AddAsync(item);
+            logger.LogInformation("Checking price for item {Name}", item.Name);
+            await steamApi.UpdateItemPriceAsync(item, true);
+            logger.LogInformation("Item {Name} created", item.Name);
             await eventLogRepository.NewEvent(ActionType.Insert, $"Item '{item.Name}' created.", item);
-            await steamApi.UpdateItemPriceAsync(item);
-            return Ok(item);
+
+            return CreatedAtAction(nameof(GetItem), new { itemId = item.Id }, item);
+        }
+        catch (ItemNotFoundException ex)
+        {
+            logger.LogWarning(ex, "Item not found while updating prices: {Exception}", ex.Message);
+            return StatusCode(StatusCodes.Status502BadGateway, $"Item does '{itemDto.Name}' not exist on Steam Market");
+        }
+        catch (ApiResponseException ex)
+        {
+            logger.LogWarning(ex, "API response error while updating prices: {Exception}", ex.Message);
+            return StatusCode(StatusCodes.Status502BadGateway, $"Error from external API");
         }
         catch (Exception ex)
         {
