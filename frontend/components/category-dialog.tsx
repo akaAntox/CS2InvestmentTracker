@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,32 +16,72 @@ import { AlertCircle, Loader2 } from "lucide-react"
 interface CategoryDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  category?: any
+  category?: any | null
   onSubmit: () => void
 }
 
-export function CategoryDialog({ open, onOpenChange, category, onSubmit }: CategoryDialogProps) {
+export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Readonly<CategoryDialogProps>) {
   const [formData, setFormData] = useState({
-    name: category?.name || "",
-    description: category?.description || "",
+    name: category?.name ?? "",
+    description: category?.description ?? "",
   })
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
+
+  // keep local state in sync with prop, like ItemDialog
+  useEffect(() => {
+    setFormData({
+      name: category?.name ?? "",
+      description: category?.description ?? "",
+    })
+    setErrors({})
+  }, [category])
+
+  const validate = () => {
+    const clientErrors: Record<string, string[]> = {}
+
+    if (!formData.name?.trim()) {
+      clientErrors["name"] = ["Name is required"]
+    }
+
+    // (Optional) light length checks to mirror stricter UX
+    if (formData.name && formData.name.trim().length > 100) {
+      clientErrors["name"] = [...(clientErrors["name"] ?? []), "Name must be at most 100 characters"]
+    }
+    if (formData.description && formData.description.trim().length > 1000) {
+      clientErrors["description"] = ["Description must be at most 1000 characters"]
+    }
+
+    return clientErrors
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setErrors({})
 
+    const clientErrors = validate()
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors)
+      setIsSubmitting(false)
+      return
+    }
+
+    const payload = {
+      name: formData.name.trim(),
+      description: formData.description?.trim() || null,
+    }
+
     try {
       if (category) {
-        await categoriesApi.update(category.id, formData)
+        await categoriesApi.update({ id: category.id, ...payload })
         toast({ title: "Success", description: "Category updated" })
       } else {
-        await categoriesApi.create(formData)
+        await categoriesApi.create(payload)
         toast({ title: "Success", description: "Category created" })
       }
+
       onSubmit()
       onOpenChange(false)
       setFormData({ name: "", description: "" })
@@ -51,18 +90,12 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Categ
         if (error.errors) {
           setErrors(error.errors)
         } else if (error.status === 409) {
-          toast({
-            title: "Error",
-            description: "Category already exists",
-            variant: "destructive",
-          })
+          toast({ title: "Error", description: "Category already exists", variant: "destructive" })
         } else {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive",
-          })
+          toast({ title: "Error", description: error.message, variant: "destructive" })
         }
+      } else {
+        toast({ title: "Error", description: "Unexpected error", variant: "destructive" })
       }
     } finally {
       setIsSubmitting(false)
@@ -81,7 +114,8 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Categ
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Global alert for server-side errors */}
           {errorMessages.length > 0 && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -95,29 +129,51 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Categ
             </Alert>
           )}
 
-          <div>
-            <Label htmlFor="cat-name">Name *</Label>
-            <Input
-              id="cat-name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Category name"
-              className="mt-2"
-            />
+          {/* Basic details */}
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-1">
+              <div>
+                <Label htmlFor="cat-name">Name *</Label>
+                <Input
+                  id="cat-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData((s) => ({ ...s, name: e.target.value }))}
+                  placeholder="Category name"
+                  className="mt-2"
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? "cat-name-error" : undefined}
+                />
+                {errors.name && (
+                  <p id="cat-name-error" className="mt-1 text-xs text-destructive">
+                    {errors.name[0]}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div>
+          {/* Description */}
+          <div className="space-y-2">
             <Label htmlFor="cat-description">Description</Label>
             <Textarea
               id="cat-description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => setFormData((s) => ({ ...s, description: e.target.value }))}
               placeholder="Optional description"
               className="mt-2"
+              rows={4}
+              aria-invalid={!!errors.description}
+              aria-describedby={errors.description ? "cat-description-error" : undefined}
             />
+            {errors.description && (
+              <p id="cat-description-error" className="mt-1 text-xs text-destructive">
+                {errors.description[0]}
+              </p>
+            )}
           </div>
 
-          <div className="flex gap-2 justify-end">
+          {/* Actions */}
+          <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

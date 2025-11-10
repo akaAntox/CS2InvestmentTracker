@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,87 +16,98 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrency, formatDate } from "@/lib/format-utils"
-import { itemsApi, ApiError } from "@/lib/api-client"
+import { itemsApi, ApiError, steamApi } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
-import { Edit, Trash2 } from "lucide-react"
-import { on } from "events"
+import { Edit, Trash2, RefreshCcw } from "lucide-react"
 
 interface ItemsTableProps {
   items: any[]
   categories: any[]
   isLoading: boolean
   onDelete: () => void
-  onEdit: () => void
+  onEdit: (item: any) => void
+  editingId?: string | null
 }
 
-export function ItemsTable({ items, categories, isLoading, onDelete, onEdit }: Readonly<ItemsTableProps>) {
+export function ItemsTable({
+  items,
+  categories,
+  isLoading,
+  onDelete,
+  onEdit,
+  editingId
+}: Readonly<ItemsTableProps>) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
-  const [isEditing, setIsEditing] = useState<string | null>(null)
+  const [isUpdating, setIsUpdating] = useState<string | null>(null)
   const { toast } = useToast()
 
   const filteredItems = (items || []).filter((item: any) => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || item.categoryId === selectedCategory
+    const matchesCategory = selectedCategory === "all" || String(item.categoryId) === String(selectedCategory)
     return matchesSearch && matchesCategory
   })
 
-  const handleEdit = async (item: any) => {
-    setIsEditing(item.id)
-    try {
-      await itemsApi.update(item.id, item)
-      toast({
-        title: "Success",
-        description: "Item updated",
-      })
-      onEdit()
-    } catch (error) {
-      if (error instanceof ApiError) {
-        const messages = Object.entries(error.errors || {})
-          .flatMap(([_, msgs]: any) => msgs)
-          .join(", ")
-        toast({
-          title: "Error",
-          description: messages || "Error during update",
-          variant: "destructive",
-        })
-      }
-    } finally {
-      setIsEditing(null)
-    }
-  }
-  
   const handleDelete = async (id: string) => {
     setIsDeleting(id)
     try {
       await itemsApi.delete(id)
-      toast({
-        title: "Success",
-        description: "Item deleted",
-      })
+      toast({ title: "Success", description: "Item deleted" })
       onDelete()
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 409) {
           toast({
             title: "Error",
-            description: "Item already in use, unable to delete",
+            description: "Item in use, cannot delete",
             variant: "destructive",
           })
         } else {
-          const messages = Object.entries(error.errors || {})
-            .flatMap(([_, msgs]: any) => msgs)
-            .join(", ")
+          const messages = Object.values(error.errors ?? {}).flat().join(", ")
           toast({
             title: "Error",
             description: messages || "Error during deletion",
             variant: "destructive",
           })
         }
+      } else {
+        toast({
+          title: "Error",
+          description: "Something went wrong during deletion",
+          variant: "destructive",
+        })
       }
     } finally {
       setIsDeleting(null)
+    }
+  }
+
+  const handleUpdatePrice = async (id: string, name: string) => {
+    setIsUpdating(id)
+    try {
+      await steamApi.updateById(id)
+      toast({
+        title: "Price updated",
+        description: `"${name}" updated from Steam.`,
+      })
+    } catch (error) {
+      if (error instanceof ApiError) {
+        const messages = Object.values(error.errors ?? {}).flat().join(", ")
+        toast({
+          title: "Error updating price",
+          description: messages || "Unable to update price from Steam",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Error updating price",
+          description: "Something went wrong contacting the Steam API",
+          variant: "destructive",
+        })
+      }
+    } finally {
+      setIsUpdating(null)
     }
   }
 
@@ -152,13 +162,15 @@ export function ItemsTable({ items, categories, isLoading, onDelete, onEdit }: R
           <TableBody>
             {filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  Nessun articolo trovato
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  No items found.
                 </TableCell>
               </TableRow>
             ) : (
               filteredItems.map((item: any) => {
                 const category = categories?.find((c) => c.id === item.categoryId)
+                const isRowUpdating = isUpdating === item.id
+                const isRowDeleting = isDeleting === item.id
                 return (
                   <TableRow key={item.id} className="hover:bg-secondary/50">
                     <TableCell className="font-medium">{item.name}</TableCell>
@@ -175,22 +187,42 @@ export function ItemsTable({ items, categories, isLoading, onDelete, onEdit }: R
                     <TableCell className="text-right text-xs text-muted-foreground">
                       {item.editDate ? formatDate(item.editDate) : formatDate(item.insertDate)}
                     </TableCell>
-                    {/* <TableCell className="text-right text-xs text-muted-foreground">
-                      {formatDate(item.editDate)}
-                    </TableCell> */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button 
-                          onClick={() => handleEdit(item)}
-                          disabled={isEditing === item.id}
-                          variant="ghost" 
+                        {/* Update price from Steam */}
+                        <Button
+                          onClick={() => handleUpdatePrice(item.id, item.name)}
+                          variant="ghost"
                           size="sm"
+                          disabled={isRowUpdating || isRowDeleting}
+                          className={isRowUpdating ? "animate-pulse" : undefined}
+                          title="Update price from Steam"
+                        >
+                          <RefreshCcw className={`w-4 h-4 ${isRowUpdating ? "animate-spin" : ""}`} />
+                          <span className="sr-only">Update price</span>
+                        </Button>
+
+                        {/* Edit */}
+                        <Button
+                          onClick={() => onEdit(item)}
+                          disabled={editingId === item.id || isRowUpdating || isRowDeleting}
+                          variant="ghost"
+                          size="sm"
+                          title="Modifica"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
+
+                        {/* Delete */}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              disabled={isRowUpdating || isRowDeleting}
+                              title="Elimina"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </AlertDialogTrigger>
@@ -203,10 +235,10 @@ export function ItemsTable({ items, categories, isLoading, onDelete, onEdit }: R
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleDelete(item.id)}
-                                disabled={isDeleting === item.id}
+                                disabled={isRowDeleting}
                                 className="bg-destructive hover:bg-destructive/90"
                               >
-                                {isDeleting === item.id ? "Deleting..." : "Delete"}
+                                {isRowDeleting ? "Deleting..." : "Delete"}
                               </AlertDialogAction>
                             </div>
                           </AlertDialogContent>

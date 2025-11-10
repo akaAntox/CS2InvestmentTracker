@@ -24,25 +24,30 @@ interface CategoriesTableProps {
   isLoading: boolean
   onEdit: (category: any) => void
   onDelete: () => void
+  /** Keep parity with ItemsTable to disable a row while editing */
+  editingId?: string | null
 }
 
-export function CategoriesTable({ categories, isLoading, onEdit, onDelete }: CategoriesTableProps) {
+export function CategoriesTable({
+  categories,
+  isLoading,
+  onEdit,
+  onDelete,
+  editingId,
+}: Readonly<CategoriesTableProps>) {
   const [searchTerm, setSearchTerm] = useState("")
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const { toast } = useToast()
 
   const filteredCategories = (categories || []).filter((cat: any) =>
-    cat.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    (cat.name ?? "").toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const handleDelete = async (id: string) => {
     setIsDeleting(id)
     try {
       await categoriesApi.delete(id)
-      toast({
-        title: "Success",
-        description: "Category deleted",
-      })
+      toast({ title: "Success", description: "Category deleted" })
       onDelete()
     } catch (error) {
       if (error instanceof ApiError) {
@@ -53,15 +58,19 @@ export function CategoriesTable({ categories, isLoading, onEdit, onDelete }: Cat
             variant: "destructive",
           })
         } else {
-          const messages = Object.entries(error.errors || {})
-            .flatMap(([_, msgs]: any) => msgs)
-            .join(", ")
+          const messages = Object.values(error.errors ?? {}).flat().join(", ")
           toast({
             title: "Error",
             description: messages || "Error during deletion",
             variant: "destructive",
           })
         }
+      } else {
+        toast({
+          title: "Error",
+          description: "Something went wrong during deletion",
+          variant: "destructive",
+        })
       }
     } finally {
       setIsDeleting(null)
@@ -80,8 +89,15 @@ export function CategoriesTable({ categories, isLoading, onEdit, onDelete }: Cat
 
   return (
     <div className="space-y-4">
-      {/* Filter */}
-      <Input placeholder="Search categories..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      {/* Filters */}
+      <div className="flex gap-3">
+        <Input
+          placeholder="Search categories..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-1"
+        />
+      </div>
 
       {/* Table */}
       <div className="rounded-lg border border-border overflow-hidden">
@@ -90,6 +106,7 @@ export function CategoriesTable({ categories, isLoading, onEdit, onDelete }: Cat
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
+              <TableHead className="text-right">Last Update</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -101,42 +118,67 @@ export function CategoriesTable({ categories, isLoading, onEdit, onDelete }: Cat
                 </TableCell>
               </TableRow>
             ) : (
-              filteredCategories.map((category: any) => (
-                <TableRow key={category.id} className="hover:bg-secondary/50">
-                  <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{category.description || "--"}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => onEdit(category)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{category.name}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                          <div className="flex gap-2">
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(category.id)}
-                              disabled={isDeleting === category.id}
-                              className="bg-destructive hover:bg-destructive/90"
+              filteredCategories.map((category: any) => {
+                const isRowDeleting = isDeleting === category.id
+                return (
+                  <TableRow key={category.id} className="hover:bg-secondary/50">
+                    <TableCell className="font-medium">{category.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{category.description || "--"}</TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground">
+                      {category.editDate
+                        ? formatDate(category.editDate)
+                        : category.insertDate
+                        ? formatDate(category.insertDate)
+                        : "--"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Edit */}
+                        <Button
+                          onClick={() => onEdit(category)}
+                          disabled={editingId === category.id || isRowDeleting}
+                          variant="ghost"
+                          size="sm"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+
+                        {/* Delete */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              disabled={isRowDeleting}
+                              title="Delete"
                             >
-                              {isDeleting === category.id ? "Deleting..." : "Delete"}
-                            </AlertDialogAction>
-                          </div>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{category.name}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                            <div className="flex gap-2">
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(category.id)}
+                                disabled={isRowDeleting}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                {isRowDeleting ? "Deleting..." : "Delete"}
+                              </AlertDialogAction>
+                            </div>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>

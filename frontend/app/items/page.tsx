@@ -12,6 +12,7 @@ import { ItemDialog } from "@/components/item-dialog"
 export default function ItemsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const {
     data: items = [],
@@ -23,22 +24,25 @@ export default function ItemsPage() {
 
   const handleEdit = (item: any) => {
     setSelectedItem(item)
+    setEditingId(item.id)
     setDialogOpen(true)
   }
 
   const handleNew = () => {
     setSelectedItem(null)
+    setEditingId(null)
     setDialogOpen(true)
   }
 
   const handleClose = () => {
     setDialogOpen(false)
     setSelectedItem(null)
+    setEditingId(null)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // ricarica la lista e chiudi
-    mutateItems()
+    await mutateItems()
     handleClose()
   }
 
@@ -65,15 +69,16 @@ export default function ItemsPage() {
             items={items}
             categories={categories}
             isLoading={itemsLoading}
-            onDelete={() => mutateItems()}
             onEdit={handleEdit}
+            onDelete={() => mutateItems()}
+            editingId={editingId}
           />
         </div>
 
         {/* Dialog */}
         <ItemDialog
           open={dialogOpen}
-          onOpenChange={handleClose}
+          onOpenChange={(open) => { if (!open) handleClose() }}
           item={selectedItem}
           categories={categories}
           onSubmit={handleSubmit}

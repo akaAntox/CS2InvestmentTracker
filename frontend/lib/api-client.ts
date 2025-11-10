@@ -135,7 +135,7 @@ export const itemsApi = {
   getAll: () => apiRequest<any[]>("/items"),
   getById: (id: string) => apiRequest<any>(`/items/${id}`),
   create: (data: any) => apiRequest<any>("/items", { method: "POST", body: data }),
-  update: (id: string, data: any) => apiRequest<any>(`/items`, { method: "PUT", body: data }),
+  update: (data: any) => apiRequest<any>(`/items`, { method: "PUT", body: data }),
   delete: (id: string) => apiRequest<void>(`/items/${id}`, { method: "DELETE" }),
 }
 
@@ -144,7 +144,7 @@ export const categoriesApi = {
   getAll: () => apiRequest<any[]>("/categories"),
   getById: (id: string) => apiRequest<any>(`/categories/${id}`),
   create: (data: any) => apiRequest<any>("/categories", { method: "POST", body: data }),
-  update: (id: string, data: any) => apiRequest<any>(`/categories/${id}`, { method: "PUT", body: data }),
+  update: (data: any) => apiRequest<any>(`/categories`, { method: "PUT", body: data }),
   delete: (id: string) => apiRequest<void>(`/categories/${id}`, { method: "DELETE" }),
 }
 
