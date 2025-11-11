@@ -14,7 +14,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { formatDate } from "@/lib/format-utils"
 import { categoriesApi, ApiError } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import { Edit, Trash2 } from "lucide-react"
@@ -106,7 +105,6 @@ export function CategoriesTable({
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead className="text-right">Last Update</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -124,13 +122,6 @@ export function CategoriesTable({
                   <TableRow key={category.id} className="hover:bg-secondary/50">
                     <TableCell className="font-medium">{category.name}</TableCell>
                     <TableCell className="text-muted-foreground">{category.description || "--"}</TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">
-                      {category.editDate
-                        ? formatDate(category.editDate)
-                        : category.insertDate
-                        ? formatDate(category.insertDate)
-                        : "--"}
-                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {/* Edit */}

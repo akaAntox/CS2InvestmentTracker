@@ -28,4 +28,5 @@ public class Item
     public Category? Category { get; set; }
     public DateTime InsertDate { get; set; }
     public DateTime? EditDate { get; set; }
+    public string? ImageUrl { get; set; }
 }

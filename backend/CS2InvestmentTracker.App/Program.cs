@@ -41,16 +41,30 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Add singletons.
-builder.Services.AddSingleton<HttpClient>();
+//builder.Services.AddSingleton<HttpClient>();
+builder.Services.AddHttpClient(nameof(SteamApi), client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 builder.Services.AddSingleton<SteamApi>();
 
 // Add CORS policy to allow all origins, methods, and headers.
 const string FrontendCorsPolicy = "FrontendCorsPolicy";
-builder.Services.AddCors(options => options.AddPolicy(FrontendCorsPolicy, policy =>
-        policy.WithOrigins("http://localhost:3000")
-            .AllowCredentials()
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+        policy
+            .WithOrigins(
+                "http://localhost:3000",
+                "https://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://127.0.0.1:3000"
+            )
+            .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowAnyHeader()));
+            .AllowCredentials()
+    );
+});
 
 var app = builder.Build();
 
@@ -66,10 +80,12 @@ else
     app.UseHsts();
 }
 
-app.UseCors(FrontendCorsPolicy);
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseCors(FrontendCorsPolicy);
+app.UseAuthorization();
+
 app.UseSwagger();
 app.UseSwaggerUI(s =>
 {
@@ -77,7 +93,6 @@ app.UseSwaggerUI(s =>
     s.RoutePrefix = "api/docs";
 });
 
-app.UseAuthorization();
 app.MapControllers();
 
 await app.RunAsync();

@@ -74,4 +74,50 @@ public class SteamController(SteamApi steamApi, ItemRepository itemRepository, I
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
+
+    [HttpGet("{itemId}/image-url")]
+    [Produces("application/json")]
+    [SwaggerOperation(Summary = "Get image URL for a specific item by ID")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetItemImageUrl(
+        int itemId,
+        CancellationToken ct = default)
+    {
+        if (itemId <= 0)
+            return BadRequest("Invalid item ID");
+
+        try
+        {
+            var item = await itemRepository.GetByIdAsync(itemId);
+            if (item is null) return NotFound("Item not found");
+
+            // 1) usa URL già salvato oppure chiedilo alla SteamApi
+            var imageUrl = item.ImageUrl;
+            if (string.IsNullOrWhiteSpace(imageUrl))
+            {
+                imageUrl = await steamApi.GetItemImageUrlAsync(item, ct);
+                if (string.IsNullOrWhiteSpace(imageUrl))
+                    return NotFound("Image not available");
+
+                // persisti per evitare future chiamate
+                item.ImageUrl = imageUrl;
+                await itemRepository.UpdateAsync(item);
+            }
+
+            // 2) ritorna JSON con l'URL (nessun redirect)
+            return Ok(new { url = imageUrl });
+        }
+        catch (ApiResponseException ex)
+        {
+            logger.LogWarning(ex, "Upstream API error while fetching image URL for item {Id}", itemId);
+            return StatusCode(StatusCodes.Status502BadGateway, "Error from external API");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while fetching image URL for item {Id}", itemId);
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+    }
 }

@@ -152,4 +152,5 @@ export const categoriesApi = {
 export const steamApi = {
   updateAll: () => apiRequest<void>("/steam", { method: "POST" }),
   updateById: (id: string) => apiRequest<void>(`/steam/${id}`, { method: "POST" }),
+  getImage: (id: string) => apiRequest<any>(`/steam/${id}/image-url`),
 }

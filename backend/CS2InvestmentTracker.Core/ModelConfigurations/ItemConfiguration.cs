@@ -52,5 +52,10 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
             .WithMany()
             .HasForeignKey(x => x.CategoryId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        builder
+            .Property(x => x.ImageUrl)
+            .IsRequired(false)
+            .HasMaxLength(2048);
     }
 }
