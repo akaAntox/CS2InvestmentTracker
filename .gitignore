@@ -397,8 +397,11 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-# Custom
+####### Custom ########
 Scripts/
+
 *.db-shm
 *.db-wal
-CS2InvestmentTracker.db
+
+backend/**/bin/
+backend/**/obj/

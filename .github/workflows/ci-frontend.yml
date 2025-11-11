@@ -1,0 +1,74 @@
+name: frontend-ci (build, SonarCloud)
+
+on:
+  push:
+    branches: [ main, master, dev ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    branches: [ main, master, dev ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+
+jobs:
+  build_and_analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FRONTEND }}   # tienilo separato se vuoi
+      SONAR_PROJECT_KEY: akaAntox_CS2InvestmentTracker_Frontend
+      SONAR_ORG: akaantox
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint (optional)
+        run: |
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "Nessuno script lint: salto."
+          fi
+
+      - name: Test (optional)
+        run: |
+          if npm run | grep -q "test"; then
+            npm test -- --ci --reporters=default --reporters=jest-junit
+          else
+            echo "Nessuno script test: salto."
+          fi
+
+      - name: Build
+        run: npm run build
+
+      # SonarCloud per JS/TS
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          args: >
+            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ env.SONAR_ORG }}
+            -Dsonar.sources=.
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.exclusions=**/node_modules/**,**/.next/**,**/coverage/**,**/*.config.js,**/*.config.mjs
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+        env:
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
