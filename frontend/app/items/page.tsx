@@ -5,11 +5,14 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { ItemsTable } from "@/components/items-table"
 import { Button } from "@/components/ui/button"
 import { useApi } from "@/hooks/use-api"
-import { itemsApi, categoriesApi } from "@/lib/api-client"
-import { Plus } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { itemsApi, categoriesApi, steamApi } from "@/lib/api-client"
+import { Loader2, Plus } from "lucide-react"
 import { ItemDialog } from "@/components/item-dialog"
 
 export default function ItemsPage() {
+  const { toast } = useToast()
+  const [isUpdating, setIsUpdating] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -46,6 +49,25 @@ export default function ItemsPage() {
     handleClose()
   }
 
+  const handleUpdatePrices = async () => {
+    setIsUpdating(true)
+    try {
+      await steamApi.updateAll()
+      toast({
+        title: "Successo",
+        description: "Prezzi Steam aggiornati con successo",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error during price update",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="flex flex-col h-full">
@@ -56,10 +78,16 @@ export default function ItemsPage() {
               <h1 className="text-3xl font-bold text-foreground">Items</h1>
               <p className="text-muted-foreground text-sm mt-1">Complete management of your items</p>
             </div>
-            <Button onClick={handleNew} className="bg-accent hover:bg-accent/90">
-              <Plus className="w-4 h-4 mr-2" />
-              New Item
-            </Button>
+            <div className="flex space-x-2">
+              <Button onClick={handleUpdatePrices} disabled={isUpdating} className="bg-primary hover:bg-primary/90">
+                {isUpdating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Update Prices
+              </Button>
+              <Button onClick={handleNew} className="bg-accent hover:bg-accent/90">
+                <Plus className="w-4 h-4 mr-2" />
+                New Item
+              </Button>
+            </div>
           </div>
         </div>
 
