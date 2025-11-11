@@ -217,7 +217,7 @@ export function ItemsTable({
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-3 py-2 rounded-lg bg-secondary border border-border text-foreground"
+          className="px-3 rounded-lg bg-secondary border border-border text-foreground"
         >
           <option value="all">All Categories</option>
           {categories?.map((cat: any) => (
@@ -241,7 +241,7 @@ export function ItemsTable({
               <TableHead className="text-right" title="Steam Price (from Steam API)">Steam Price</TableHead>
               <TableHead className="text-right" title="Net Profit at -15% tax">Net Profit</TableHead>
               <TableHead className="text-right" title="Total Net Profit at -15% tax">Total Net Profit</TableHead>
-              <TableHead className="text-right" title="% Profit at -15% tax">% Profit</TableHead>
+              <TableHead className="text-right" title="Yield at -15% tax">Yield</TableHead>
               <TableHead className="text-right">Last Update</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>

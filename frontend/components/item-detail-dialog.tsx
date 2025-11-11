@@ -14,14 +14,14 @@ import { formatCurrency, formatDate } from "@/lib/format-utils"
 import { steamApi } from "@/lib/api-client"
 
 type Item = {
-  id: string
+  id: string | number
   name: string
   description?: string | null
   quantity?: number | null
-  buyPrice?: number | null            // per unit
+  buyPrice?: number | null
   totalBuyPrice?: number | null
-  minSellPrice?: number | null        // per unit (Steam)
-  avgSellPrice?: number | null        // per unit
+  minSellPrice?: number | null
+  avgSellPrice?: number | null
   sellVolume?: number | null
   totalMinSellPrice?: number | null
   netProfit?: number | null
@@ -29,160 +29,185 @@ type Item = {
   percentNetProfit?: number | null
   categoryId?: string | number | null
   category?: string | { id: string | number; name: string; description?: string | null } | null
+  marketName?: string | null
+  createdAt?: string | Date | null
+  updatedAt?: string | Date | null
   insertDate?: string | Date | null
   editDate?: string | Date | null
 }
 
-interface Props {
+type Props = {
   open: boolean
   onOpenChange: (v: boolean) => void
-  item: Item | null
-  categories: { id: string | number; name: string }[]
+  item?: Item | null
+  loading?: boolean
+  categories?: { id: string | number; name: string }[]
 }
 
-export function ItemDetailDialog({ open, onOpenChange, item, categories }: Readonly<Props>) {
-  // ------- IMAGE (via backend client: steamApi.getImage(id) => { url } | string) -------
-  const [imgUrl, setImgUrl] = useState<string | null>(null)
+export function ItemDetailDialog({ open, onOpenChange, item, loading, categories = [] }: Readonly<Props>) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imgLoading, setImgLoading] = useState(false)
   const [imgError, setImgError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let aborted = false
-    setImgError(null)
-    setImgUrl(null)
+  const safeItem = useMemo(() => (item ? { ...item, name: item.name ?? "Senza nome" } : null), [item])
 
-    async function load() {
-      if (!open || !item?.id) return
-      setImgLoading(true)
-      try {
-        const res: any = await steamApi.getImage(item.id) // usa il TUO endpoint corretto
-        if (aborted) return
-        const url = typeof res === "string" ? res : (res?.url ?? null)
-        if (url) setImgUrl(url)
-        else setImgError("No image")
-      } catch (e: any) {
-        if (!aborted) setImgError(e?.message ?? "Error loading image")
-      } finally {
-        if (!aborted) setImgLoading(false)
-      }
+  const categoryLabel = useMemo(() => {
+    const it = safeItem
+    if (!it) return null
+    const raw = it.category as any
+    if (typeof raw === "string" && raw) return raw
+    if (raw && typeof raw === "object" && typeof raw.name === "string" && raw.name) return raw.name
+    if (it.categoryId != null) {
+      const found = categories.find(c => String(c.id) === String(it.categoryId))
+      if (found) return found.name
     }
+    return null
+  }, [safeItem, categories])
 
-    load()
-    return () => { aborted = true }
+  useEffect(() => { 
+    let aborted = false 
+    setImgError(null) 
+    setImageUrl(null) 
+
+    async function load() { 
+      if (!open || !safeItem?.id) return setImgLoading(true) 
+      try { 
+        const res: any = await steamApi.getImage(safeItem?.id as any) 
+        if (aborted) return 
+        const url = typeof res === "string" ? res : (res?.url ?? null)
+        if (url) 
+          setImageUrl(url) 
+        else 
+          setImgError("No image") 
+      } catch (e: any) { 
+        if (!aborted) setImgError(e?.message ?? "Error loading image") 
+      } finally { 
+        if (!aborted) setImgLoading(false) 
+      } 
+    } 
+    load() 
+    return () => { aborted = true } 
   }, [open, item?.id])
 
-  // ------------------- DERIVED FIELDS -------------------
-  const derived = useMemo(() => {
-    if (!item) return {}
-    const qty = Number(item.quantity ?? 0)
-    const buy = Number(item.buyPrice ?? 0)
-    const steam = Number(item.minSellPrice ?? 0)
-
-    const totalPayed = item.totalBuyPrice ?? (qty && buy ? qty * buy : null)
-    const totalSteam = item.totalMinSellPrice ?? (qty && steam ? qty * steam : null)
-    const netProfit =
-      item.netProfit ?? (totalSteam != null && totalPayed != null ? totalSteam - totalPayed : null)
-    const percentNetProfit =
-      item.percentNetProfit ?? (netProfit != null && totalPayed ? (netProfit / totalPayed) * 100 : null)
-
-    return { qty, buy, steam, totalPayed, totalSteam, netProfit, percentNetProfit }
-  }, [item])
-
-  // ------------------- CATEGORY LABEL -------------------
-  type CategoryShape = { id: string | number; name: string; description?: string | null }
-  function getCategoryLabel(
-    itm: any,
-    cats: { id: string | number; name: string }[]
-  ): string | null {
-    const raw = itm?.category as unknown
-    if (typeof raw === "string") return raw
-    if (raw && typeof raw === "object" && "name" in (raw as any)) {
-      const name = (raw as CategoryShape).name
-      if (typeof name === "string" && name.length > 0) return name
-    }
-    const id = itm?.categoryId
-    const found = cats.find(c => String(c.id) === String(id))
-    return found?.name ?? null
-  }
-  const categoryLabel = getCategoryLabel(item, categories)
+  const title = safeItem?.name ?? "Element Details"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[1200px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="truncate">{item?.name}</span>
-            {categoryLabel ? <Badge variant="outline">{categoryLabel}</Badge> : null}
-          </DialogTitle>
-          <DialogDescription>
-            Dettagli dell’item, prezzi Steam e metriche di profitto.
-          </DialogDescription>
+      <DialogContent
+        key={safeItem?.id ?? "noitem"}
+        className="
+          max-w-[96vw] md:max-w-[90vw] lg:max-w-[1100px] xl:max-w-7xl
+          max-h-[95vh] overflow-y-auto
+          p-0 sm:rounded-lg
+        "
+      >
+        <DialogHeader className="px-5 pt-5 pb-3 border-b min-w-0">
+          <DialogTitle className="truncate text-balance">{title}</DialogTitle>
+          {(categoryLabel || safeItem?.marketName || safeItem?.quantity != null) && (
+            <DialogDescription className="flex flex-wrap gap-2 mt-2">
+              {categoryLabel && <Badge variant="secondary">{categoryLabel}</Badge>}
+              {safeItem?.marketName && <Badge>{safeItem.marketName}</Badge>}
+              {safeItem?.quantity != null && <Badge variant="outline">Qty: {safeItem.quantity}</Badge>}
+            </DialogDescription>
+          )}
         </DialogHeader>
 
-        {!item ? null : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* IMAGE */}
-            <div className="relative flex flex-col gap-2">
-              <div className="sm:max-w-[300px] aspect-square rounded-lg border bg-secondary/40 overflow-hidden">
-                {imgLoading ? (
-                  <Skeleton className="h-full w-full" />
-                ) : imgUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={imgUrl}
-                    alt={item.name}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                    onError={() => setImgError("Image not available")}
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">
-                    {imgError ?? "No image"}
+        <div className="p-5 min-h-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* IMMAGINE */}
+            <section className="min-w-0">
+              <div className="w-full rounded-md border bg-muted/30 overflow-hidden">
+                <div className="relative w-full aspect-4/3">
+                  {imgLoading ? (
+                    <div className="p-4">
+                      <Skeleton className="w-full h-64" />
+                      <div className="mt-3 flex gap-2">
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    </div>
+                  ) : imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={imageUrl}
+                      alt={safeItem?.name ?? "Item image"}
+                      className="absolute inset-0 w-full h-full object-contain"
+                      loading="lazy"
+                      decoding="async"
+                      fetchPriority="low"
+                      onError={() => setImgError("Image not available")}
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-sm text-muted-foreground text-center">
+                      <span>{imgError ?? "No image available"}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {(safeItem?.createdAt || safeItem?.updatedAt || safeItem?.insertDate || safeItem?.editDate) && (
+                <div className="mt-3 text-xs text-muted-foreground">
+                  {safeItem?.createdAt && <span>Creato: {formatDate(safeItem.createdAt as any)}</span>}
+                  {safeItem?.updatedAt && <span className="ml-2">Aggiornato: {formatDate(safeItem.updatedAt as any)}</span>}
+                  {safeItem?.insertDate && <span className="ml-2">Inserito: {formatDate(safeItem.insertDate as any)}</span>}
+                  {safeItem?.editDate && <span className="ml-2">Modificato: {formatDate(safeItem.editDate as any)}</span>}
+                </div>
+              )}
+            </section>
+
+            {/* DESCRIZIONE + DETTAGLI */}
+            <section className="min-w-0">
+              <div className="prose prose-sm md:prose-base max-w-none wrap-break-word hyphens-auto text-foreground">
+                {loading ? (
+                  <div>
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-full mt-3" />
+                    <Skeleton className="h-4 w-5/6 mt-2" />
+                    <Skeleton className="h-4 w-2/3 mt-2" />
                   </div>
+                ) : safeItem?.description ? (
+                  <p className="whitespace-pre-wrap">{safeItem.description}</p>
+                ) : (
+                  <p className="text-muted-foreground">No notes.</p>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground line-clamp-4">
-                {item.description || "—"}
-              </p>
-            </div>
 
-            {/* DETAILS */}
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Detail label="Quantity" value={fmt(item.quantity)} />
-              <Detail label="Buy Price (unit)" value={fmtCur(item.buyPrice)} />
-              <Detail label="Total Buy Price" value={fmtCur((derived as any).totalPayed)} />
-              <Detail label="Steam Min (unit)" value={fmtCur(item.minSellPrice)} />
-              <Detail label="Steam Avg (unit)" value={fmtCur(item.avgSellPrice)} />
-              <Detail label="Sell Volume" value={fmt(item.sellVolume)} />
-              <Detail label="Total Steam (min)" value={fmtCur((derived as any).totalSteam)} />
-              <Detail label="Net Profit" value={signedCur((derived as any).netProfit)} />
-              <Detail label="Total Net Profit" value={signedCur(item.totalNetProfit)} />
-              <Detail label="% Net Profit" value={signedPct((derived as any).percentNetProfit)} />
-              <Detail label="Category Id" value={fmt(item.categoryId)} />
-              <Detail label="Category" value={categoryLabel || "—"} />
-              <Detail label="Insert Date" value={fmtDate(item.insertDate)} />
-              <Detail label="Edit Date" value={fmtDate(item.editDate)} />
-            </div>
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <Stat label="Purchase price (unit)" value={fmtCur(safeItem?.buyPrice)} />
+                <Stat label="Minimum sell price (unit)" value={fmtCur(safeItem?.minSellPrice)} />
+                <Stat label="Average price (unit)" value={fmtCur(safeItem?.avgSellPrice)} />
+                <Stat label="Sales volume" value={fmt(safeItem?.sellVolume)} />
+                <Stat label="Total expenditure" value={fmtCur(safeItem?.totalBuyPrice)} />
+                <Stat label="Theoretical revenue (min)" value={fmtCur(safeItem?.totalMinSellPrice)} />
+                <Stat label="Net profit (unit)" value={fmtCur(safeItem?.netProfit)} />
+                <Stat label="Total net profit" value={fmtCur(safeItem?.totalNetProfit)} />
+                <Stat
+                  label="Yield %"
+                  value={
+                    safeItem?.percentNetProfit == null
+                      ? "—"
+                      : `${Number(safeItem.percentNetProfit).toFixed(2)}%`
+                  }
+                />
+              </div>
+            </section>
           </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
   )
 }
 
-/* ---------------- helpers ---------------- */
-
-function Detail({ label, value }: { label: string; value: string }) {
+function Stat({ label, value }: Readonly<{ label: string; value: string | number }>) {
   return (
-    <div className="rounded-md border p-3">
-      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-1 font-medium">{value}</div>
+    <div className="rounded-md border p-3 min-w-0">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 font-medium truncate">{value}</div>
     </div>
   )
 }
-function fmt(n: any) { if (n === null || n === undefined || Number.isNaN(Number(n))) return "—"; return String(n) }
-function fmtCur(n: any) { const v = Number(n); return Number.isFinite(v) && v !== 0 ? formatCurrency(v) : "—" }
-function signedCur(n: any) { const v = Number(n); if (!Number.isFinite(v) || v === 0) return v === 0 ? formatCurrency(0) : "—"; const s = v > 0 ? "+" : "−"; return `${s}${formatCurrency(Math.abs(v))}` }
-function signedPct(n: any) { const v = Number(n); if (!Number.isFinite(v)) return "—"; const s = v > 0 ? "+" : v < 0 ? "−" : ""; return `${s}${Math.abs(v).toFixed(2)}%` }
-function fmtDate(d: any) { return d ? formatDate(d) : "—" }
-  
+
+/* helpers */
+function fmt(n?: number | null) { return n == null ? "—" : String(n) }
+function fmtCur(n?: number | null) { return n == null ? "—" : formatCurrency(Number(n)) }

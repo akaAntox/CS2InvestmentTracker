@@ -8,14 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useApi } from "@/hooks/use-api"
 import { itemsApi, categoriesApi, steamApi } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
-import { formatCurrency } from "@/lib/format-utils"
+import { formatCurrency, formatPercentage } from "@/lib/format-utils"
 import { Activity, TrendingUp, Package, Tag, Loader2 } from "lucide-react"
 
 interface Item {
   id: string
   name: string
-  minSellPrice: number
-  minSellPrice?: number
+  totalNetProfit?: number | null
+  percentNetProfit?: number | null
 }
 
 interface Category {
@@ -33,9 +33,10 @@ export default function Home() {
 
   const totalItems = items?.length || 0
   const totalCategories = categories?.length || 0
-  const averagePrice = items?.length
-    ? items.reduce((sum: number, item: Item) => sum + (item.minSellPrice || 0), 0) / items.length
+  const averagePercentage = items?.length
+    ? items.reduce((sum: number, item: Item) => sum + (item.percentNetProfit || 0), 0) / items.length
     : 0
+  const totalPrice = items?.reduce((sum: number, item: Item) => sum + (item.totalNetProfit || 0), 0) || 0
 
   const handleUpdatePrices = async () => {
     setIsUpdating(true)
@@ -92,17 +93,17 @@ export default function Home() {
                 isLoading={categoriesLoading}
               />
               <KpiCard
-                title="Average Price"
-                description="Average item prices"
-                value={formatCurrency(averagePrice)}
-                icon={<TrendingUp className="w-5 h-5" />}
+                title="Average Yield %"
+                description="Average yield percentage across items"
+                value={formatPercentage(averagePercentage)}
+                icon={<Activity className="w-5 h-5" />}
                 isLoading={itemsLoading}
               />
               <KpiCard
-                title="Latest Updates"
-                description="From Steam Market API"
-                value="--"
-                icon={<Activity className="w-5 h-5" />}
+                title="Total Net Profit"
+                description="Total net profit of all items"
+                value={formatCurrency(totalPrice)}
+                icon={<TrendingUp className="w-5 h-5" />}
                 isLoading={false}
               />
             </div>

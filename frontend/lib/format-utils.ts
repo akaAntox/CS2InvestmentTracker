@@ -16,6 +16,10 @@ export function formatCurrency(value: number, currency = "EUR"): string {
   }).format(value)
 }
 
+export function formatPercentage(value: number): string {
+  return value.toFixed(2) + "%"
+}
+
 export function formatError(error: unknown): string {
   if (error instanceof Error) {
     return error.message
