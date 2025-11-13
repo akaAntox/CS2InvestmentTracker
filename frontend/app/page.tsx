@@ -14,8 +14,12 @@ import { Activity, TrendingUp, Package, Tag, Loader2 } from "lucide-react"
 interface Item {
   id: string
   name: string
+  buyPrice: number
   totalNetProfit?: number | null
   percentNetProfit?: number | null
+  insertDate: string
+  editDate: string
+  quantity: number
 }
 
 interface Category {
@@ -31,12 +35,25 @@ export default function Home() {
 
   const { data: categories = [], isLoading: categoriesLoading } = useApi("categories", () => categoriesApi.getAll())
 
-  const totalItems = items?.length || 0
-  const totalCategories = categories?.length || 0
+  const numberItems = items?.length || 0
+  const numberCategories = categories?.length || 0
+  const totalItems = items?.reduce((sum: number, item: Item) => sum + item.quantity, 0) || 0
+  const totalSpent = items?.reduce((sum: number, item: Item) => sum + (item.buyPrice * item.quantity), 0) || 0
   const averagePercentage = items?.length
     ? items.reduce((sum: number, item: Item) => sum + (item.percentNetProfit || 0), 0) / items.length
     : 0
-  const totalPrice = items?.reduce((sum: number, item: Item) => sum + (item.totalNetProfit || 0), 0) || 0
+  const totalNetProfit = items?.reduce((sum: number, item: Item) => sum + (item.totalNetProfit || 0), 0) || 0
+  const lastUpdateDate = items?.length
+    ? new Date(
+        Math.max(
+          ...items.map((item: Item) => {
+            const editDate = new Date(item.editDate).getTime()
+            const insertDate = new Date(item.insertDate).getTime()
+            return Math.max(editDate, insertDate)
+          }
+        ))
+      )
+    : null
 
   const handleUpdatePrices = async () => {
     setIsUpdating(true)
@@ -79,16 +96,16 @@ export default function Home() {
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard
-                title="Total Items"
+                title="Items"
                 description="Number of items in the system"
-                value={totalItems}
+                value={numberItems}
                 icon={<Package className="w-5 h-5" />}
                 isLoading={itemsLoading}
               />
               <KpiCard
                 title="Categories"
-                description="Number of categories"
-                value={totalCategories}
+                description="Number of categories in the system"
+                value={numberCategories}
                 icon={<Tag className="w-5 h-5" />}
                 isLoading={categoriesLoading}
               />
@@ -100,9 +117,9 @@ export default function Home() {
                 isLoading={itemsLoading}
               />
               <KpiCard
-                title="Total Net Profit"
-                description="Total net profit of all items"
-                value={formatCurrency(totalPrice)}
+                title="Last update"
+                description="Last Steam price update (last item)"
+                value={lastUpdateDate ? lastUpdateDate.toLocaleString() : "N/A"}
                 icon={<TrendingUp className="w-5 h-5" />}
                 isLoading={false}
               />
@@ -115,14 +132,27 @@ export default function Home() {
                 <CardDescription>Overview of data management</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-secondary rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Active Items</p>
+                    <p className="text-sm text-muted-foreground mb-1">Active Items (by quantity)</p>
                     <p className="text-2xl font-bold text-foreground">{totalItems}</p>
                   </div>
                   <div className="p-4 bg-secondary rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Categories</p>
-                    <p className="text-2xl font-bold text-foreground">{totalCategories}</p>
+                    <p className="text-sm text-muted-foreground mb-1">Total Spent</p>
+                    <p className="text-2xl font-bold text-foreground">{formatCurrency(totalSpent)}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-secondary rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-1">Average Yield %</p>
+                    <p className="text-2xl font-bold text-foreground">{formatPercentage(averagePercentage)}</p>
+                  </div>
+                  <div className="p-4 bg-secondary rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-1">Total Net Profit</p>
+                    <p className="text-2xl font-bold text-foreground">{formatCurrency(totalNetProfit)}</p>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
