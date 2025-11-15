@@ -1,3 +1,5 @@
+using CS2InvestmentTracker.App.Hubs;
+using CS2InvestmentTracker.App.Services;
 using CS2InvestmentTracker.Core.Data;
 using CS2InvestmentTracker.Core.Models;
 using CS2InvestmentTracker.Core.Repositories;
@@ -17,6 +19,7 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 builder.Services.AddScoped<ItemRepository>();
 builder.Services.AddScoped<CategoryRepository>();
 builder.Services.AddScoped<EventLogRepository>();
+builder.Services.AddScoped<PriceUpdateService>();
 
 // Add identity, razor pages and controllers. 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -39,6 +42,7 @@ builder.Services.AddSwaggerGen(c =>
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
 });
+builder.Services.AddSignalR();
 
 // Add singletons.
 //builder.Services.AddSingleton<HttpClient>();
@@ -85,6 +89,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors(FrontendCorsPolicy);
 app.UseAuthorization();
+app.MapHub<PriceUpdateHub>("/hubs/priceUpdate");
 
 app.UseSwagger();
 app.UseSwaggerUI(s =>

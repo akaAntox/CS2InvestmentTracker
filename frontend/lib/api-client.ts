@@ -132,25 +132,25 @@ async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Pr
 
 // Items API
 export const itemsApi = {
-  getAll: () => apiRequest<any[]>("/items"),
-  getById: (id: string) => apiRequest<any>(`/items/${id}`),
-  create: (data: any) => apiRequest<any>("/items", { method: "POST", body: data }),
-  update: (data: any) => apiRequest<any>(`/items`, { method: "PUT", body: data }),
-  delete: (id: string) => apiRequest<void>(`/items/${id}`, { method: "DELETE" }),
+  getAll: () => apiRequest<any[]>("/api/items"),
+  getById: (id: string) => apiRequest<any>(`/api/items/${id}`),
+  create: (data: any) => apiRequest<any>("/api/items", { method: "POST", body: data }),
+  update: (data: any) => apiRequest<any>(`/api/items`, { method: "PUT", body: data }),
+  delete: (id: string) => apiRequest<void>(`/api/items/${id}`, { method: "DELETE" }),
 }
 
 // Categories API
 export const categoriesApi = {
-  getAll: () => apiRequest<any[]>("/categories"),
-  getById: (id: string) => apiRequest<any>(`/categories/${id}`),
-  create: (data: any) => apiRequest<any>("/categories", { method: "POST", body: data }),
-  update: (data: any) => apiRequest<any>(`/categories`, { method: "PUT", body: data }),
-  delete: (id: string) => apiRequest<void>(`/categories/${id}`, { method: "DELETE" }),
+  getAll: () => apiRequest<any[]>("/api/categories"),
+  getById: (id: string) => apiRequest<any>(`/api/categories/${id}`),
+  create: (data: any) => apiRequest<any>("/api/categories", { method: "POST", body: data }),
+  update: (data: any) => apiRequest<any>(`/api/categories`, { method: "PUT", body: data }),
+  delete: (id: string) => apiRequest<void>(`/api/categories/${id}`, { method: "DELETE" }),
 }
 
 // Steam API
 export const steamApi = {
-  updateAll: () => apiRequest<void>("/steam", { method: "POST" }),
-  updateById: (id: string) => apiRequest<void>(`/steam/${id}`, { method: "POST" }),
-  getImage: (id: string) => apiRequest<any>(`/steam/${id}/image-url`),
+  updateAll: () => apiRequest<void>("/api/steam", { method: "POST" }),
+  updateById: (id: string) => apiRequest<void>(`/api/steam/${id}`, { method: "POST" }),
+  getImage: (id: string) => apiRequest<any>(`/api/steam/${id}/image-url`),
 }
