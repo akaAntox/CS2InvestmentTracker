@@ -33,13 +33,6 @@ interface Item {
   quantity: number
 }
 
-interface Category {
-  id: string
-  name: string
-}
-
-const PER_ITEM_SECONDS = 2.3 // timeout + backend + steam api (~2.x secondi per item)
-
 export default function Home() {
   const { toast } = useToast()
   const [isUpdating, setIsUpdating] = useState(false)
@@ -48,34 +41,26 @@ export default function Home() {
   const [updateProgress, setUpdateProgress] = useState(0) // 0–100
   const [processedCount, setProcessedCount] = useState<number | null>(null)
   const [totalCount, setTotalCount] = useState<number | null>(null)
-  const [estimatedTotalSeconds, setEstimatedTotalSeconds] = useState<number | null>(null)
-  const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
-  const { data: items = [], isLoading: itemsLoading } = useApi("items", () => itemsApi.getAll())
-  const {
-    data: categories = [],
-    isLoading: categoriesLoading,
-  } = useApi("categories", () => categoriesApi.getAll())
+  const { data: items = [], isLoading: itemsLoading, mutate: mutateItems } = 
+    useApi("items", () => itemsApi.getAll())
+  const { data: categories = [], isLoading: categoriesLoading } = 
+    useApi("categories", () => categoriesApi.getAll())
 
   const numberItems = items?.length || 0
   const numberCategories = categories?.length || 0
 
-  const totalItems =
-    items?.reduce((sum: number, item: Item) => sum + item.quantity, 0) || 0
-
-  const totalSpent =
-    items?.reduce((sum: number, item: Item) => sum + item.buyPrice * item.quantity, 0) || 0
+  const totalItems = items?.reduce((sum: number, item: Item) => sum + item.quantity, 0) || 0
+  const totalSpent = items?.reduce((sum: number, item: Item) => sum + item.buyPrice * item.quantity, 0) || 0
 
   const averagePercentage = items?.length
     ? items.reduce((sum: number, item: Item) => sum + (item.percentNetProfit || 0), 0) /
       items.length
     : 0
 
-  const totalNetProfit =
-    items?.reduce((sum: number, item: Item) => sum + (item.totalNetProfit || 0), 0) || 0
+  const totalNetProfit = items?.reduce((sum: number, item: Item) => sum + (item.totalNetProfit || 0), 0) || 0
 
-  const profitableItems =
-    items?.filter((item: Item) => (item.totalNetProfit || 0) > 0).length || 0
+  const profitableItems = items?.filter((item: Item) => (item.totalNetProfit || 0) > 0).length || 0
 
   const lastUpdateDate = items?.length
     ? new Date(
@@ -125,7 +110,14 @@ export default function Home() {
     connection.on("PriceUpdateCompleted", (payload: { total: number }) => {
       setUpdateProgress(100)
       setIsUpdating(false)
-      // volendo dopo un po' resetti:
+      mutateItems()
+
+      toast({
+        title: "Update completed",
+        description: `Steam prices updated for ${payload.total} items.`,
+      })
+
+      // reset progress bar after short delay
       setTimeout(() => {
         setUpdateProgress(0)
         setProcessedCount(null)
@@ -140,7 +132,7 @@ export default function Home() {
     return () => {
       connection.stop()
     }
-  }, [])
+  }, [mutateItems])
 
   const handleUpdatePrices = async () => {
     if (isUpdating) return
@@ -151,12 +143,12 @@ export default function Home() {
     setTotalCount(null)
 
     try {
-      await steamApi.updateAll()
-
       toast({
         title: "Update started",
         description: "Steam prices are being updated. Progress will appear at the top.",
       })
+
+      await steamApi.updateAll()
     } catch (error) {
       setIsUpdating(false)
       toast({
@@ -165,17 +157,6 @@ export default function Home() {
         variant: "destructive",
       })
     }
-  }
-
-  const remainingSeconds =
-    estimatedTotalSeconds != null ? Math.max(estimatedTotalSeconds - elapsedSeconds, 0) : null
-
-  const formatSeconds = (seconds: number) => {
-    const s = Math.ceil(seconds)
-    if (s < 60) return `${s}s`
-    const m = Math.floor(s / 60)
-    const rest = s % 60
-    return rest > 0 ? `${m}m ${rest}s` : `${m}m`
   }
 
   return (
