@@ -12,6 +12,13 @@ import { itemsApi, ApiError } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import { getErrorMessages } from "@/lib/format-utils"
 import { AlertCircle, Loader2 } from "lucide-react"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
 
 interface ItemDialogProps {
   open: boolean
@@ -49,6 +56,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
 
     if (!formData.name?.trim()) clientErrors["name"] = ["Name is required"]
     if (!formData.categoryId) clientErrors["categoryId"] = ["Category is required"]
+    if (!formData.quantity) clientErrors["quantity"] = ["Quantity is required"]
     if (formData.quantity !== "") {
       const q = Number(formData.quantity)
       if (!Number.isInteger(q) || q <= 0) clientErrors["quantity"] = ["Quantity must be an integer > 0"]
@@ -131,7 +139,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass bg-card border-border">
+      <DialogContent className="glass-dialog">
         <DialogHeader>
           <DialogTitle>{item ? "Edit Item" : "New Item"}</DialogTitle>
           <DialogDescription>
@@ -144,7 +152,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
           {errorMessages.length > 0 && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
+              <AlertDescription className="glass glass-panel">
                 <ul className="list-disc pl-5">
                   {errorMessages.map((msg, i) => (
                     <li key={i}>{msg}</li>
@@ -164,7 +172,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
                   value={formData.name}
                   onChange={(e) => setFormData((s) => ({ ...s, name: e.target.value }))}
                   placeholder="Item name"
-                  className="mt-2"
+                  className="mt-2 glass-tile"
                   aria-invalid={!!errors.name}
                   aria-describedby={errors.name ? "item-name-error" : undefined}
                 />
@@ -214,7 +222,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
                   value={formData.quantity}
                   onChange={(e) => setFormData((s) => ({ ...s, quantity: e.target.value }))}
                   placeholder="0"
-                  className="mt-2"
+                  className="mt-2 glass-tile"
                   aria-invalid={!!errors.quantity}
                   aria-describedby={errors.quantity ? "item-quantity-error" : undefined}
                 />
@@ -228,7 +236,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
               <div>
                 <Label htmlFor="item-buyPrice">Buy Price *</Label>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="inline-flex shrink-0 rounded-md border border-input px-2 py-2 text-sm">€</span>
+                  <span className="glass-tile inline-flex shrink-0 rounded-md border border-input px-2 py-2 text-sm">€</span>
                   <Input
                     id="item-buyPrice"
                     type="text"
@@ -236,6 +244,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
                     value={formData.buyPrice}
                     onChange={(e) => setFormData((s) => ({ ...s, buyPrice: e.target.value }))}
                     placeholder="0.00"
+                    className="glass-tile"
                     aria-invalid={!!errors.buyPrice}
                     aria-describedby={errors.buyPrice ? "item-buyPrice-error" : undefined}
                   />
@@ -260,7 +269,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
               value={formData.description}
               onChange={(e) => setFormData((s) => ({ ...s, description: e.target.value }))}
               placeholder="Optional notes about the item"
-              className="mt-2"
+              className="mt-2 glass-tile"
               rows={4}
             />
           </div>
