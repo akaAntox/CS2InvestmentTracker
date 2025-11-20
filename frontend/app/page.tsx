@@ -89,6 +89,13 @@ export default function Home() {
       ? "text-destructive"
       : "text-foreground"
 
+  const layoutVariant: "stonks" | "not-stonks" =
+    totalNetProfit > 0
+      ? "stonks"
+      : totalNetProfit < 0
+      ? "not-stonks"
+      : "stonks" // default to "stonks" if neutral
+  
   const getApiBaseUrl = () => {
     return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api"
   }
@@ -161,7 +168,7 @@ export default function Home() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout variant={layoutVariant}>
       <div className="glass dashboard-container flex flex-col h-full">
         {/* Header */}
         <div className="sticky top-0 z-10 glass-panel border-b border-border p-6 mx-6 mt-6">

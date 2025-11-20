@@ -110,57 +110,122 @@
 
 /* Main sidebar glass container */
 .sidebar-glass {
-    background: rgba(6, 10, 24, 0.78);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    background: radial-gradient(
+        circle at top left,
+        rgba(91, 184, 255, 0.28),
+        rgba(6, 10, 24, 0.94)
+    );
+    backdrop-filter: blur(26px);
+    -webkit-backdrop-filter: blur(26px);
+    border-right: 1px solid rgba(255, 255, 255, 0.16);
     color: var(--sidebar-foreground);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.75);
 }
 
 /* Header area (logo + title) */
 .sidebar-glass-header {
-    background: rgba(10, 14, 30, 0.85);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(
+        to right,
+        rgba(12, 18, 38, 0.96),
+        rgba(33, 48, 94, 0.9)
+    );
+    border-bottom: 1px solid rgba(137, 207, 255, 0.35);
+}
+
+/* Footer */
+.sidebar-glass-footer {
+    background: rgba(8, 12, 26, 0.92);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    color: color-mix(in srgb, var(--sidebar-foreground) 60%, transparent);
 }
 
 /* Nav link base */
 .sidebar-link {
+    position: relative; /* needed for glow bar */
     background: transparent;
     color: var(--sidebar-foreground);
     border-radius: 0.75rem;
     transition:
-        background-color 120ms ease-out,
-        color 120ms ease-out,
-        transform 80ms ease-out,
-        box-shadow 120ms ease-out;
+        background-color 140ms ease-out,
+        color 140ms ease-out,
+        transform 90ms ease-out,
+        box-shadow 140ms ease-out;
+    overflow: hidden;
 }
 
-/* Hover (non attivo) */
+/* Subtle hover (non active) */
 .sidebar-link:hover {
     background: rgba(255, 255, 255, 0.06);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     transform: translateY(-1px);
 }
 
-/* Link attivo */
+/* Glow bar on the left (visible only for active link) */
+.sidebar-link::before {
+    content: "";
+    position: absolute;
+    inset-y: 8px;
+    left: 6px;
+    width: 3px;
+    border-radius: 999px;
+    background: linear-gradient(
+        to bottom,
+        rgba(91, 184, 255, 0),
+        rgba(91, 184, 255, 0.9),
+        rgba(75, 222, 151, 0.9),
+        rgba(75, 222, 151, 0)
+    );
+    opacity: 0;
+    transform: translateX(-4px);
+    transition:
+        opacity 160ms ease-out,
+        transform 160ms ease-out;
+}
+
+/* Active link */
 .sidebar-link-active {
     background: linear-gradient(
         135deg,
-        rgba(91, 184, 255, 0.85),
-        rgba(75, 222, 151, 0.9)
+        rgba(91, 184, 255, 0.9),
+        rgba(75, 222, 151, 0.96)
     );
     color: var(--sidebar-primary-foreground);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.75),
+        0 0 28px rgba(91, 184, 255, 0.75);
+    animation: sidebar-active-pulse 6s ease-in-out infinite;
 }
 
-/* Icona dentro il link attivo */
+/* Show glow bar only when active */
+.sidebar-link-active::before {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Icon + label inside active */
 .sidebar-link-active svg {
     color: var(--sidebar-primary-foreground);
 }
 
-/* Footer */
-.sidebar-glass-footer {
-    background: rgba(8, 12, 26, 0.9);
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-    color: color-mix(in srgb, var(--sidebar-foreground) 60%, transparent);
+.sidebar-link-active span {
+    text-shadow: 0 0 12px rgba(0, 0, 0, 0.65);
+}
+
+/* Pulse animation for active link */
+@keyframes sidebar-active-pulse {
+    0% {
+        box-shadow:
+            0 10px 30px rgba(0, 0, 0, 0.75),
+            0 0 16px rgba(91, 184, 255, 0.55);
+    }
+    50% {
+        box-shadow:
+            0 18px 40px rgba(0, 0, 0, 0.9),
+            0 0 32px rgba(91, 184, 255, 0.9);
+    }
+    100% {
+        box-shadow:
+            0 10px 30px rgba(0, 0, 0, 0.75),
+            0 0 16px rgba(91, 184, 255, 0.55);
+    }
 }
