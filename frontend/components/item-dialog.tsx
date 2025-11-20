@@ -131,7 +131,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border">
+      <DialogContent className="glass bg-card border-border">
         <DialogHeader>
           <DialogTitle>{item ? "Edit Item" : "New Item"}</DialogTitle>
           <DialogDescription>

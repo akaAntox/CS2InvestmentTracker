@@ -114,7 +114,7 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Reado
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="glass space-y-6">
           {/* Global alert for server-side errors */}
           {errorMessages.length > 0 && (
             <Alert variant="destructive">

@@ -13,6 +13,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrency, formatDate } from "@/lib/format-utils"
@@ -20,6 +27,8 @@ import { itemsApi, ApiError, steamApi } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import { Edit, Trash2, RefreshCcw, ChevronUp, ChevronDown } from "lucide-react"
 import { ItemDetailDialog } from "@/components/item-detail-dialog"
+import "@/styles/glass.css"
+import { cn } from "@/lib/utils"
 
 interface ItemsTableProps {
   items: any[]
@@ -318,48 +327,61 @@ export function ItemsTable({
   )
 
   return (
-    <div className="space-y-4">
+    <div className="glass flex flex-col h-full min-h-0 space-y-4">
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-3 rounded-lg">
         <Input
           placeholder="Search items..."
           value={searchTerm}
           onChange={(e) => { setSearchTerm(e.target.value); setPage(1) }}
-          className="flex-1"
+          className="flex-1 glass-tile border-r border-border"
         />
-        <select
+        <Select
           value={selectedCategory}
-          onChange={(e) => { setSelectedCategory(e.target.value); setPage(1) }}
-          className="px-3 rounded-lg bg-secondary border border-border text-foreground h-10"
+          onValueChange={(val) => { setSelectedCategory(val); setPage(1) }}
         >
-          <option value="all">All Categories</option>
-          {categories?.map((cat: any) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="h-10 min-w-[180px] rounded-lg glass-tile border border-border text-foreground">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+
+          <SelectContent className="glass-panel glass-select-content">
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories?.map((cat: any) => (
+              <SelectItem key={cat.id} value={String(cat.id)}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {!CHUNK_SCROLL && (
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Rows:</span>
-            <select
-              value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
-              className="px-3 rounded-lg bg-secondary border border-border text-foreground h-10"
-            >
-              {[10, 25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(val) => { setPageSize(Number(val)); setPage(1) }}
+              >
+                <SelectTrigger className="h-10 px-3 rounded-lg glass-tile border border-border text-foreground min-w-[100px]">
+                  <SelectValue placeholder={pageSize} />
+                </SelectTrigger>
+
+                <SelectContent className="glass-panel glass-select-content">
+                  {[10, 25, 50, 100].map(n => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
           </div>
         )}
       </div>
 
-      {/* Wrapper che evita overflow orizzontale e verticale */}
-      <div className="rounded-lg border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="max-h-[70vh] overflow-y-auto">
-            <Table className="min-w-[900px]">
-              <TableHeader className="bg-secondary sticky top-0 z-10">
+      <div className="glass-table rounded-lg flex-1 min-h-0 overflow-hidden">
+        <div className="overflow-x-auto h-full">
+          <div className="h-full overflow-y-auto">
+            <Table className="min-w-[900px] glass-panel">
+              <TableHeader className="glass-tile border-r sticky top-0 z-10">
                 <TableRow>
                   <SortableHead label="Name" k="name" />
                   <SortableHead label="Category" k="category" />
@@ -403,7 +425,7 @@ export function ItemsTable({
                     return (
                       <TableRow
                         key={item.id}
-                        className="hover:bg-secondary/50 cursor-pointer"
+                        className="glass-table-row cursor-pointer"
                         onClick={() => setDetailItem(item)}
                       >
                         <TableCell className="font-medium">{item.name}</TableCell>
@@ -464,7 +486,7 @@ export function ItemsTable({
                               variant="ghost"
                               size="sm"
                               disabled={isRowUpdating || isRowDeleting}
-                              className={isRowUpdating ? "animate-pulse" : undefined}
+                              className={cn("btn-glass-ghost", isRowUpdating && "animate-pulse")}
                               title="Update price from Steam"
                             >
                               <RefreshCcw className={`w-4 h-4 ${isRowUpdating ? "animate-spin" : ""}`} />
@@ -475,6 +497,7 @@ export function ItemsTable({
                               disabled={editingId === item.id || isRowUpdating || isRowDeleting}
                               variant="ghost"
                               size="sm"
+                              className={cn("btn-glass-ghost", isRowUpdating && "animate-pulse")}
                               title="Edit"
                             >
                               <Edit className="w-4 h-4" />
@@ -484,7 +507,7 @@ export function ItemsTable({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="text-destructive hover:text-destructive"
+                                  className={cn("btn-glass-ghost", isRowUpdating && "animate-pulse")}
                                   disabled={isRowUpdating || isRowDeleting}
                                   title="Delete"
                                 >
@@ -525,7 +548,7 @@ export function ItemsTable({
 
       {/* Footer paginazione */}
       {!CHUNK_SCROLL && sorted.length > 0 && (
-        <div className="flex items-center justify-between gap-3 text-sm">
+        <div className="glass-panel flex items-center justify-between gap-3 text-sm px-4 py-3 rounded-lg">
           <div className="text-muted-foreground">
             Showing <strong>{paged.length}</strong> of <strong>{sorted.length}</strong> items
           </div>

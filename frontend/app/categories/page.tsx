@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { useApi } from "@/hooks/use-api"
 import { categoriesApi } from "@/lib/api-client"
 import { Plus } from "lucide-react"
+import "@/styles/glass.css"
 
 export default function CategoriesPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -32,9 +33,9 @@ export default function CategoriesPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-full">
+      <div className="glass flex flex-col h-full">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b border-border p-6">
+        <div className="sticky top-0 z-10 glass-panel border-b border-border p-6 mx-6 mt-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Categories</h1>
@@ -54,7 +55,7 @@ export default function CategoriesPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 min-h-0 p-6">
           <CategoriesTable
             categories={categories}
             isLoading={isLoading}

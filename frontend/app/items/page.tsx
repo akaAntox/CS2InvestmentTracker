@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button"
 import { useApi } from "@/hooks/use-api"
 import { useToast } from "@/hooks/use-toast"
 import { itemsApi, categoriesApi, steamApi } from "@/lib/api-client"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Plus, RefreshCcw } from "lucide-react"
 import { ItemDialog } from "@/components/item-dialog"
+import "@/styles/glass.css"
 
 export default function ItemsPage() {
   const { toast } = useToast()
@@ -44,7 +45,7 @@ export default function ItemsPage() {
   }
 
   const handleSubmit = async () => {
-    // ricarica la lista e chiudi
+    // reload list and close dialog
     await mutateItems()
     handleClose()
   }
@@ -70,17 +71,24 @@ export default function ItemsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-full">
+      {/* Root page container must fill and hide outer scroll */}
+      <div className="glass flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b border-border p-6">
+        <div className="glass-panel border-b border-border p-6 mx-6 mt-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Items</h1>
-              <p className="text-muted-foreground text-sm mt-1">Complete management of your items</p>
+              <p className="text-muted-foreground text-sm mt-1">
+                Complete management of your items
+              </p>
             </div>
             <div className="flex space-x-2">
-              <Button onClick={handleUpdatePrices} disabled={isUpdating} className="bg-primary hover:bg-primary/90">
-                {isUpdating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              <Button
+                onClick={handleUpdatePrices}
+                disabled={isUpdating}
+                className="bg-primary hover:bg-primary/90"
+              >
+                {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
                 Update Prices
               </Button>
               <Button onClick={handleNew} className="bg-accent hover:bg-accent/90">
@@ -91,8 +99,8 @@ export default function ItemsPage() {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        {/* Content area: fills remaining height, no external scroll */}
+        <div className="flex-1 min-h-0 p-6 overflow-hidden">
           <ItemsTable
             items={items}
             categories={categories}

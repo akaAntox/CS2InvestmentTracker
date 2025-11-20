@@ -21,6 +21,7 @@ import {
   CreditCard,
   DollarSign,
 } from "lucide-react"
+import "@/styles/glass.css"
 
 interface Item {
   id: string
@@ -161,9 +162,9 @@ export default function Home() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-full">
+      <div className="glass dashboard-container flex flex-col h-full">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b border-border p-6">
+        <div className="sticky top-0 z-10 glass-panel border-b border-border p-6 mx-6 mt-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
@@ -174,7 +175,7 @@ export default function Home() {
             <Button
               onClick={handleUpdatePrices}
               disabled={isUpdating}
-              className="bg-primary hover:bg-primary/90"
+              className="bg-primary/80 hover:bg-primary"
             >
               {isUpdating ? (
                 <>
@@ -192,7 +193,7 @@ export default function Home() {
 
           {/* Banner di avanzamento update */}
           {isUpdating && (
-            <div className="mt-4 rounded-lg border border-border bg-secondary/60 p-4 space-y-2">
+            <div className="mt-4 rounded-lg border border-border glass-panel p-4 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-medium text-foreground">
                   Updating Steam prices…
@@ -224,6 +225,7 @@ export default function Home() {
                 value={numberItems}
                 icon={<Package className="w-5 h-5" />}
                 isLoading={itemsLoading}
+                className="glass-panel"
               />
               <KpiCard
                 title="Categories"
@@ -231,6 +233,7 @@ export default function Home() {
                 value={numberCategories}
                 icon={<Tag className="w-5 h-5" />}
                 isLoading={categoriesLoading}
+                className="glass-panel"
               />
               <KpiCard
                 title="Average Yield %"
@@ -238,6 +241,7 @@ export default function Home() {
                 value={formatPercentage(averagePercentage)}
                 icon={<TrendingUp className="w-5 h-5" />}
                 isLoading={itemsLoading}
+                className="glass-panel"
               />
               <KpiCard
                 title="Last update"
@@ -249,11 +253,12 @@ export default function Home() {
                 }
                 icon={<Clock className="w-5 h-5" />}
                 isLoading={false}
+                className="glass-panel"
               />
             </div>
 
             {/* Quick Stats Card */}
-            <Card className="bg-card border-border">
+            <Card className="glass-panel border-border">
               <CardHeader>
                 <CardTitle>Quick Stats</CardTitle>
                 <CardDescription>
@@ -263,7 +268,7 @@ export default function Home() {
               <CardContent className="space-y-4">
                 {/* Prima riga: quantità e spesa */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="p-4 bg-secondary rounded-lg flex flex-col gap-1">
+                  <div className="p-4 glass-panel rounded-lg flex flex-col gap-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">Active Items (qty)</p>
                       <Package className="w-4 h-4 text-muted-foreground" />
@@ -271,7 +276,7 @@ export default function Home() {
                     <p className="text-2xl font-bold text-foreground">{totalItems}</p>
                   </div>
 
-                  <div className="p-4 bg-secondary rounded-lg flex flex-col gap-1">
+                  <div className="p-4 glass-panel rounded-lg flex flex-col gap-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">Total Spent</p>
                       <CreditCard className="w-4 h-4 text-muted-foreground" />
@@ -281,7 +286,7 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="p-4 bg-secondary rounded-lg flex flex-col gap-1">
+                  <div className="p-4 glass-panel rounded-lg flex flex-col gap-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">Profitable Items</p>
                       <TrendingUp className="w-4 h-4 text-muted-foreground" />
@@ -291,7 +296,7 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="p-4 bg-secondary rounded-lg flex flex-col gap-1">
+                  <div className="p-4 glass-panel rounded-lg flex flex-col gap-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">Last Update</p>
                       <Clock className="w-4 h-4 text-muted-foreground" />
@@ -306,7 +311,7 @@ export default function Home() {
 
                 {/* Seconda riga: performance */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-secondary rounded-lg">
+                  <div className="p-4 glass-panel rounded-lg">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-sm text-muted-foreground">Average Yield %</p>
                       <TrendingUp className="w-4 h-4 text-muted-foreground" />
@@ -315,7 +320,7 @@ export default function Home() {
                       {formatPercentage(averagePercentage)}
                     </p>
                   </div>
-                  <div className="p-4 bg-secondary rounded-lg">
+                  <div className="p-4 glass-panel rounded-lg">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-sm text-muted-foreground">Total Net Profit</p>
                       <DollarSign className="w-4 h-4 text-muted-foreground" />

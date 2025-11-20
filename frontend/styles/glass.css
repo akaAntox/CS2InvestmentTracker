@@ -1,0 +1,166 @@
+
+.glass {
+    /* Make the whole page transparent so the background image is visible */
+    background-color: transparent !important;
+}
+
+.glass .glass-panel {
+    /* Main glass container (header, big cards, KPI wrappers) */
+    background: rgba(10, 10, 25, 0.55);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.glass .glass-tile {
+    /* Smaller tiles inside cards */
+    background: rgba(10, 10, 25, 0.65);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.glass-tile-head-table {
+    background: rgba(15, 15, 35, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.glass [class*="bg-secondary"],
+.glass [class*="bg-primary"],
+.glass [class*="bg-card"],
+.glass [class*="bg-popover"],
+.glass [class*="bg-accent"],
+.glass [class*="bg-muted"] {
+    background-color: rgba(15, 15, 30, 0.45) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass button[class*="bg-"]:hover {
+    background-color: rgba(25, 25, 45, 0.55) !important;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass button:focus-visible {
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.35) !important;
+}
+
+/* Glass shell for the whole table card */
+.glass .glass-table {
+    background: rgba(10, 10, 25, 0.55);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+}
+
+/* Header row glass */
+.glass .glass-table-header {
+    background: rgba(15, 15, 35, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* Table rows hover (no Tailwind bg- utilities, to avoid conflicts) */
+.glass .glass-table-row {
+    transition: background-color 120ms ease-out, transform 80ms ease-out;
+}
+
+.glass .glass-table-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateY(-1px);
+}
+
+/* Optional: last row subtle border */
+.glass .glass-table-row:last-child td {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.glass .btn-glass-ghost {
+    background-color: rgba(5, 5, 15, 0.2);
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.glass .btn-glass-ghost:hover {
+    background-color: rgba(20, 20, 40, 0.4);
+}
+
+/* Glass dropdown for shadcn Select */
+.glass-select-content {
+    background: rgba(10, 10, 25, 0.85);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+}
+
+.glass-select-content [data-highlighted="true"] {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Main sidebar glass container */
+.sidebar-glass {
+    background: rgba(6, 10, 24, 0.78);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--sidebar-foreground);
+}
+
+/* Header area (logo + title) */
+.sidebar-glass-header {
+    background: rgba(10, 14, 30, 0.85);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Nav link base */
+.sidebar-link {
+    background: transparent;
+    color: var(--sidebar-foreground);
+    border-radius: 0.75rem;
+    transition:
+        background-color 120ms ease-out,
+        color 120ms ease-out,
+        transform 80ms ease-out,
+        box-shadow 120ms ease-out;
+}
+
+/* Hover (non attivo) */
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    transform: translateY(-1px);
+}
+
+/* Link attivo */
+.sidebar-link-active {
+    background: linear-gradient(
+        135deg,
+        rgba(91, 184, 255, 0.85),
+        rgba(75, 222, 151, 0.9)
+    );
+    color: var(--sidebar-primary-foreground);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
+/* Icona dentro il link attivo */
+.sidebar-link-active svg {
+    color: var(--sidebar-primary-foreground);
+}
+
+/* Footer */
+.sidebar-glass-footer {
+    background: rgba(8, 12, 26, 0.9);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    color: color-mix(in srgb, var(--sidebar-foreground) 60%, transparent);
+}
