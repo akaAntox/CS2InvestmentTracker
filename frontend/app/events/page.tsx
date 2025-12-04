@@ -3,22 +3,25 @@
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar } from "lucide-react"
+import "@/styles/glass.css"
 
 export default function EventsPage() {
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-full">
+      <div className="glass flex flex-col h-full">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b border-border p-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Events</h1>
-            <p className="text-muted-foreground text-sm mt-1">History of all operations and changes</p>
+        <div className="sticky top-0 z-10 glass-panel border-b border-border p-6 mx-6 mt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Events</h1>
+              <p className="text-muted-foreground text-sm mt-1">History of all operations and changes</p>
+            </div>
           </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
-          <Card className="bg-card border-border h-full">
+          <Card className="glass bg-card border-border h-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />

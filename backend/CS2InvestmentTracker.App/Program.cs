@@ -1,3 +1,5 @@
+using CS2InvestmentTracker.App.Hubs;
+using CS2InvestmentTracker.App.Services;
 using CS2InvestmentTracker.Core.Data;
 using CS2InvestmentTracker.Core.Models;
 using CS2InvestmentTracker.Core.Repositories;
@@ -17,9 +19,11 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 builder.Services.AddScoped<ItemRepository>();
 builder.Services.AddScoped<CategoryRepository>();
 builder.Services.AddScoped<EventLogRepository>();
+builder.Services.AddScoped<PriceUpdateService>();
 
 // Add identity, razor pages and controllers. 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services
+    .AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -39,6 +43,7 @@ builder.Services.AddSwaggerGen(c =>
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
 });
+builder.Services.AddSignalR();
 
 // Add singletons.
 //builder.Services.AddSingleton<HttpClient>();
@@ -54,12 +59,24 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
         policy
-            .WithOrigins(
-                "http://localhost:3000",
-                "https://localhost:3000",
-                "http://127.0.0.1:3000",
-                "https://127.0.0.1:3000"
-            )
+            //.WithOrigins(
+            //    "http://localhost:3000",
+            //    "https://localhost:3000",
+            //    "http://127.0.0.1:3000",
+            //    "https://127.0.0.1:3000",
+            //    "http://localhost:3001",
+            //    "https://localhost:3001",
+            //    "http://127.0.0.1:3001",
+            //    "https://127.0.0.1:3001"
+            //)
+            .SetIsOriginAllowed(origin =>
+            {
+                return
+                    origin.StartsWith("http://localhost:") || origin.StartsWith("https://localhost:") ||
+                    origin.StartsWith("http://127.0.0.1:") || origin.StartsWith("https://127.0.0.1:") ||
+                    origin.StartsWith("http://192.168.1.51:") || origin.StartsWith("https://192.168.1.51");
+            })
+            //.AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()
@@ -67,6 +84,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -85,6 +103,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors(FrontendCorsPolicy);
 app.UseAuthorization();
+app.MapHub<PriceUpdateHub>("/hubs/priceUpdate");
 
 app.UseSwagger();
 app.UseSwaggerUI(s =>

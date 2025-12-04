@@ -1,8 +1,8 @@
-﻿using CS2InvestmentTracker.Core.Exceptions;
+﻿using CS2InvestmentTracker.App.Services;
+using CS2InvestmentTracker.Core.Exceptions;
 using CS2InvestmentTracker.Core.Models;
 using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Repositories.Custom;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -10,9 +10,10 @@ namespace CS2InvestmentTracker.App.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SteamController(SteamApi steamApi, ItemRepository itemRepository, ILogger<SteamController> logger) : ControllerBase
+public class SteamController(SteamApi steamApi, PriceUpdateService priceUpdateService, ItemRepository itemRepository, ILogger<SteamController> logger) : ControllerBase
 {
     private readonly SteamApi steamApi = steamApi;
+    private readonly PriceUpdateService priceUpdateService = priceUpdateService;
     private readonly ItemRepository itemRepository = itemRepository;
     private readonly ILogger<SteamController> logger = logger;
 
@@ -25,7 +26,7 @@ public class SteamController(SteamApi steamApi, ItemRepository itemRepository, I
             // Fetch all items and update their prices
             logger.LogInformation("Updating prices");
             var items = await itemRepository.GetAllAsync();
-            await steamApi.UpdatePricesAsync(items.AsQueryable());
+            await priceUpdateService.UpdateAllPricesAsync(items.AsQueryable());
         }
         catch (ItemNotFoundException ex)
         {

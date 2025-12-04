@@ -106,7 +106,7 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Reado
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border">
+      <DialogContent className="glass-dialog">
         <DialogHeader>
           <DialogTitle>{category ? "Edit Category" : "New Category"}</DialogTitle>
           <DialogDescription>

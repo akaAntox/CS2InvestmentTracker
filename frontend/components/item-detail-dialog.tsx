@@ -96,7 +96,8 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
       <DialogContent
         key={safeItem?.id ?? "noitem"}
         className="
-          max-w-[96vw] md:max-w-[90vw] lg:max-w-[1100px] xl:max-w-7xl
+          glass-dialog
+          max-w-[96vw] md:max-w-[90vw] lg:max-w-[1100px] xl:max-w-5xl
           max-h-[95vh] overflow-y-auto
           p-0 sm:rounded-lg
         "
@@ -116,8 +117,8 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* IMMAGINE */}
             <section className="min-w-0">
-              <div className="w-full rounded-md border bg-muted/30 overflow-hidden">
-                <div className="relative w-full aspect-4/3">
+              <div className="w-full rounded-md border-2 overflow-hidden">
+                <div className="relative w-full aspect-4/3 max-h-80 sm:max-h-[360px] md:max-h-[420px]">
                   {imgLoading ? (
                     <div className="p-4">
                       <Skeleton className="w-full h-64" />

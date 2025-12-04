@@ -20,7 +20,7 @@ jobs:
       pull-requests: write
 
     env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FRONTEND }}   # tienilo separato se vuoi
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # tienilo separato se vuoi
       SONAR_PROJECT_KEY: akaAntox_CS2InvestmentTracker_Frontend
       SONAR_ORG: akaantox
 
@@ -71,4 +71,4 @@ jobs:
             -Dsonar.exclusions=**/node_modules/**,**/.next/**,**/coverage/**,**/*.config.js,**/*.config.mjs
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
         env:
-          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

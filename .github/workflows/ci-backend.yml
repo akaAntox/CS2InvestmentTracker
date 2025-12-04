@@ -1,4 +1,4 @@
-name: backend-ci (build, test, SonarCloud)
+name: backend-ci-cd (publish, test, SonarCloud, deploy)
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'     # usa 8.0.x se il progetto è ancora su 8
+          dotnet-version: '9.0.x'
 
       - name: Install SonarScanner for .NET
         run: dotnet tool install --global dotnet-sonarscanner
@@ -59,10 +59,16 @@ jobs:
       - name: Restore
         run: dotnet restore CS2InvestmentTracker.sln
 
-      - name: Build (Release)
-        run: dotnet build CS2InvestmentTracker.sln --no-restore -c Release
+      - name: Publish (Release)
+        run: |
+          dotnet publish CS2InvestmentTracker.sln \
+          -c Release \
+          -r linux-arm64 \
+          --self-contained \
+          --no-restore \
+          -o ./publish_output
 
-      - name: Test (with coverage if tests exist)
+      - name: Test
         run: |
           set -e
           TESTS=$(find . -name "*Tests.csproj" | wc -l)
@@ -76,18 +82,64 @@ jobs:
                 /p:CoverletOutput=./TestResults/coverage;
             done
           else
-            echo "Nessun progetto di test trovato: salto i test ma proseguo con l'analisi."
+            echo "Nessun progetto di test trovato."
           fi
 
-      - name: SonarCloud - End (Publish)
+      - name: SonarCloud - End
         run: dotnet-sonarscanner end /d:sonar.login="$SONAR_TOKEN"
 
-      - name: Upload test/coverage artifacts (optional)
-        if: always()
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: backend-tests-and-coverage
-          path: |
-            **/TestResults/*.trx
-            **/coverage.cobertura.xml
-          if-no-files-found: ignore
+          name: rpi-build
+          path: backend/publish_output/**
+          if-no-files-found: error
+
+deploy_to_pi:
+    needs: build_test_analyze
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rpi-build
+          path: deploy_files
+
+      - name: Deploy to Raspberry Pi via SSH
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          source: "deploy_files/*"
+          target: "/home/${{ secrets.USERNAME }}/backend_temp"
+          strip_components: 1 # Rimuove la cartella deploy_files e copia solo il contenuto
+
+      - name: Restart Service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            # Ferma il servizio
+            sudo systemctl stop CS2InvestmentBackend.service
+            
+            # Pulisce la cartella di destinazione
+            rm -rf /home/${{ secrets.USERNAME }}/backend/*
+            
+            # Sposta i nuovi file dalla temp alla cartella finale
+            mv /home/${{ secrets.USERNAME }}/backend_temp/* /home/${{ secrets.USERNAME }}/backend/
+            
+            # Rimuove la cartella temp
+            rm -rf /home/${{ secrets.USERNAME }}/backend_temp
+            
+            # Rida i permessi (importante)
+            chmod +x /home/${{ secrets.USERNAME }}/backend/CS2InvestmentTracker.App
+            
+            # Riavvia
+            sudo systemctl start CS2InvestmentBackend.service

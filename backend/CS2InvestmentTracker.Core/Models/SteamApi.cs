@@ -1,16 +1,13 @@
-﻿using CS2InvestmentTracker.Core.Data;
-using CS2InvestmentTracker.Core.Exceptions;
+﻿using CS2InvestmentTracker.Core.Exceptions;
 using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace CS2InvestmentTracker.Core.Models;
 
-// API LIMIT: around 200 requests every 5 minutes for market items IIRC
 public class SteamApi(IServiceScopeFactory serviceScopeFactory,
                       IHttpClientFactory httpClientFactory,
                       ILogger<SteamApi> logger)
@@ -22,42 +19,39 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
     private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
     private readonly ILogger<SteamApi> logger = logger;
 
+    // === RATE LIMITING ===
+    // Valore conservativo: ~ 1 richiesta / secondo
+    // Puoi abbassare o alzare questo valore se vedi che è troppo lento o ancora dà 429
+    private static readonly TimeSpan MinDelayBetweenRequests = TimeSpan.FromMilliseconds(3000);
+
+    private readonly SemaphoreSlim rateLimiter = new(1, 1);
+    private DateTime lastRequestUtc = DateTime.MinValue;
+
     // Regex per meta og:image
     private static readonly Regex OgImageRegex = new(
         "<meta\\s+property=[\"']og:image[\"']\\s+content=[\"'](?<url>[^\"']+)[\"']",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    /// <summary>
-    /// Aggiorna i prezzi per una collezione di item.
-    /// </summary>
-    public async Task UpdatePricesAsync(IQueryable<Item> items)
+    private async Task WaitForRateLimitSlotAsync(CancellationToken ct)
     {
-        foreach (Item item in items)
+        await rateLimiter.WaitAsync(ct);
+        try
         {
-            try
-            {
-                await UpdateItemPriceAsync(item);
-            }
-            catch (HttpRequestException ex)
-            {
-                logger.LogError(ex, "Invalid HTTP request: {Message}", ex.Message);
-            }
-            catch (JsonException ex)
-            {
-                logger.LogError(ex, "Error deserializing JSON response: {Message}", ex.Message);
-            }
-            catch (ApiResponseException ex)
-            {
-                logger.LogError(ex, "Error reading API response: {Message}", ex.Message);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error updating prices for item {ItemName}: {Message}",
-                                item.Name, ex.Message);
-            }
-        }
+            var now = DateTime.UtcNow;
+            var nextAllowed = lastRequestUtc + MinDelayBetweenRequests;
 
-        logger.LogInformation("Price update completed");
+            if (nextAllowed > now)
+            {
+                var delay = nextAllowed - now;
+                await Task.Delay(delay, ct);
+            }
+
+            lastRequestUtc = DateTime.UtcNow;
+        }
+        finally
+        {
+            rateLimiter.Release();
+        }
     }
 
     /// <summary>
@@ -65,7 +59,9 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
     /// </summary>
     public async Task UpdateItemPriceAsync(Item item, bool createItemInDb = false)
     {
-        var http = httpClientFactory.CreateClient(nameof(SteamApi));
+        logger.LogInformation("Updating price for item {Name}", item.Name);
+        await WaitForRateLimitSlotAsync(CancellationToken.None);
+        using var http = httpClientFactory.CreateClient(nameof(SteamApi));
 
         var encodedItemName = Uri.EscapeDataString(item.Name);
         var apiUrl = PricesLink + encodedItemName;
@@ -88,8 +84,6 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
         var itemRepository = provider.GetRequiredService<ItemRepository>();
         await (createItemInDb ? itemRepository.AddAsync(item) : itemRepository.UpdateAsync(item));
     }
-
-    // =============== NUOVI METODI IMMAGINE ===============
 
     /// <summary>
     /// Restituisce l'URL dell'immagine dell'item leggendo la pagina listing (meta og:image).
@@ -116,27 +110,5 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
             url = string.Concat("https://", url.AsSpan(7));
 
         return string.IsNullOrWhiteSpace(url) ? null : url;
-    }
-
-    /// <summary>
-    /// Scarica i bytes dell'immagine (per proxy lato server).
-    /// </summary>
-    public async Task<(byte[] Data, string? ContentType, string? ETag)?> FetchImageAsync(string imageUrl, CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(imageUrl)) return null;
-
-        var http = httpClientFactory.CreateClient(nameof(SteamApi));
-        using var req = new HttpRequestMessage(HttpMethod.Get, imageUrl);
-        req.Headers.Accept.Clear();
-        req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("image/*"));
-
-        using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-        if (!resp.IsSuccessStatusCode) return null;
-
-        var bytes = await resp.Content.ReadAsByteArrayAsync(ct);
-        var contentType = resp.Content.Headers.ContentType?.ToString();
-        var etag = resp.Headers.ETag?.Tag?.Trim('"');
-
-        return (bytes, contentType, etag);
     }
 }

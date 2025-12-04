@@ -1,0 +1,241 @@
+
+.glass {
+    /* Make the whole page transparent so the background image is visible */
+    background-color: transparent !important;
+}
+
+.glass-panel {
+    /* Main glass container (header, big cards, KPI wrappers) */
+    background: rgba(10, 10, 25, 0.55);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.glass-tile {
+    /* Smaller tiles inside cards */
+    background: rgba(10, 10, 25, 0.65);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.glass-dialog {
+    /* Dialog background */
+    background: rgba(10, 10, 25, 0.85);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.glass-tile-head-table {
+    background: rgba(15, 15, 35, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.glass [class*="bg-secondary"],
+.glass [class*="bg-primary"],
+.glass [class*="bg-card"],
+.glass [class*="bg-popover"],
+.glass [class*="bg-accent"],
+.glass [class*="bg-muted"] {
+    background-color: rgba(15, 15, 30, 0.45) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass button[class*="bg-"]:hover {
+    background-color: rgba(25, 25, 45, 0.55) !important;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass button:focus-visible {
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.35) !important;
+}
+
+/* Glass shell for the whole table card */
+.glass .glass-table {
+    background: rgba(10, 10, 25, 0.55);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+}
+
+/* Header row glass */
+.glass .glass-table-header {
+    background: rgba(15, 15, 35, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* Table rows hover (no Tailwind bg- utilities, to avoid conflicts) */
+.glass .glass-table-row {
+    transition: background-color 120ms ease-out, transform 80ms ease-out;
+}
+
+.glass .glass-table-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateY(-1px);
+}
+
+/* Optional: last row subtle border */
+.glass .glass-table-row:last-child td {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.glass .btn-glass-ghost {
+    background-color: rgba(5, 5, 15, 0.2);
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.glass .btn-glass-ghost:hover {
+    background-color: rgba(20, 20, 40, 0.4);
+}
+
+/* Glass dropdown for shadcn Select */
+.glass-select-content {
+    background: rgba(10, 10, 25, 0.85);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+}
+
+.glass-select-content [data-highlighted="true"] {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Main sidebar glass container */
+.sidebar-glass {
+    background: radial-gradient(
+        circle at top left,
+        rgba(91, 184, 255, 0.28),
+        rgba(6, 10, 24, 0.94)
+    );
+    backdrop-filter: blur(26px);
+    -webkit-backdrop-filter: blur(26px);
+    border-right: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--sidebar-foreground);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.75);
+}
+
+/* Header area (logo + title) */
+.sidebar-glass-header {
+    background: linear-gradient(
+        to right,
+        rgba(12, 18, 38, 0.96),
+        rgba(33, 48, 94, 0.9)
+    );
+    border-bottom: 1px solid rgba(137, 207, 255, 0.35);
+}
+
+/* Footer */
+.sidebar-glass-footer {
+    background: rgba(8, 12, 26, 0.92);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    color: color-mix(in srgb, var(--sidebar-foreground) 60%, transparent);
+}
+
+/* Nav link base */
+.sidebar-link {
+    position: relative; /* needed for glow bar */
+    background: transparent;
+    color: var(--sidebar-foreground);
+    border-radius: 0.75rem;
+    transition:
+        background-color 140ms ease-out,
+        color 140ms ease-out,
+        transform 90ms ease-out,
+        box-shadow 140ms ease-out;
+    overflow: hidden;
+}
+
+/* Subtle hover (non active) */
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    transform: translateY(-1px);
+}
+
+/* Glow bar on the left (visible only for active link) */
+.sidebar-link::before {
+    content: "";
+    position: absolute;
+    inset-y: 8px;
+    left: 6px;
+    width: 3px;
+    border-radius: 999px;
+    background: linear-gradient(
+        to bottom,
+        rgba(91, 184, 255, 0),
+        rgba(91, 184, 255, 0.9),
+        rgba(75, 222, 151, 0.9),
+        rgba(75, 222, 151, 0)
+    );
+    opacity: 0;
+    transform: translateX(-4px);
+    transition:
+        opacity 160ms ease-out,
+        transform 160ms ease-out;
+}
+
+/* Active link */
+.sidebar-link-active {
+    background: linear-gradient(
+        135deg,
+        rgba(91, 184, 255, 0.9),
+        rgba(75, 222, 151, 0.96)
+    );
+    color: var(--sidebar-primary-foreground);
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.75),
+        0 0 28px rgba(91, 184, 255, 0.75);
+    animation: sidebar-active-pulse 6s ease-in-out infinite;
+}
+
+/* Show glow bar only when active */
+.sidebar-link-active::before {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Icon + label inside active */
+.sidebar-link-active svg {
+    color: var(--sidebar-primary-foreground);
+}
+
+.sidebar-link-active span {
+    text-shadow: 0 0 12px rgba(0, 0, 0, 0.65);
+}
+
+/* Pulse animation for active link */
+@keyframes sidebar-active-pulse {
+    0% {
+        box-shadow:
+            0 10px 30px rgba(0, 0, 0, 0.75),
+            0 0 16px rgba(91, 184, 255, 0.55);
+    }
+    50% {
+        box-shadow:
+            0 18px 40px rgba(0, 0, 0, 0.9),
+            0 0 32px rgba(91, 184, 255, 0.9);
+    }
+    100% {
+        box-shadow:
+            0 10px 30px rgba(0, 0, 0, 0.75),
+            0 0 16px rgba(91, 184, 255, 0.55);
+    }
+}
