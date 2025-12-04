@@ -66,6 +66,7 @@ jobs:
           -c Release \
           -r linux-arm64 \
           --self-contained
+          -o ./publish_output \
 
       - name: Test
         run: |
