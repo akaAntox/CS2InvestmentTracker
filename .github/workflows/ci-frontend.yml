@@ -1,7 +1,7 @@
 name: frontend-ci (build, SonarCloud)
 
 on:
-  workflow_run:
+  workflow_dispatch:
   push:
     branches: [ main, master, dev ]
     paths:
