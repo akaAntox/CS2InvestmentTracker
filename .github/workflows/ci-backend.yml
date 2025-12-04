@@ -1,6 +1,7 @@
 name: backend-ci-cd (publish, test, SonarCloud, deploy)
 
 on:
+  workflow_run:
   push:
     branches: [ main, master, dev ]
     paths:
