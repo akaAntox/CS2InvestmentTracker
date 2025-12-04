@@ -95,7 +95,7 @@ jobs:
           path: backend/publish_output/**
           if-no-files-found: error
 
-deploy_to_pi:
+  deploy_to_pi:
     needs: build_test_analyze
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
