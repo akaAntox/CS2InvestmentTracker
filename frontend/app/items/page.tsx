@@ -2,13 +2,13 @@
 
 import { useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { ItemsTable } from "@/components/items-table"
+import { ItemsTable } from "@/components/items/items-table"
 import { Button } from "@/components/ui/button"
 import { useApi } from "@/hooks/use-api"
 import { useToast } from "@/hooks/use-toast"
 import { itemsApi, categoriesApi, steamApi } from "@/lib/api-client"
 import { Loader2, Plus, RefreshCcw } from "lucide-react"
-import { ItemDialog } from "@/components/item-dialog"
+import { ItemDialog } from "@/components/items/item-dialog"
 import "@/styles/glass.css"
 
 export default function ItemsPage() {
@@ -106,7 +106,8 @@ export default function ItemsPage() {
             categories={categories}
             isLoading={itemsLoading}
             onEdit={handleEdit}
-            onDelete={() => mutateItems()}
+            onPriceUpdate={mutateItems}
+            onDelete={mutateItems}
             editingId={editingId}
           />
         </div>

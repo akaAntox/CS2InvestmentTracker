@@ -33,8 +33,8 @@ export function PriceChart({
       }),
       buyPrice: Number.parseFloat(item.buyPrice?.toString() || "0"),
       minSellPrice:
-        item.minSellPrice || item.minSellPrice
-          ? Number.parseFloat((item.minSellPrice || item.minSellPrice)?.toString() || "0")
+        item.minSellPrice
+          ? Number.parseFloat((item.minSellPrice)?.toString() || "0")
           : null,
     }))
   }, [data])
@@ -63,7 +63,7 @@ export function PriceChart({
                   borderRadius: "8px",
                   color: "var(--color-foreground)",
                 }}
-                formatter={(value) => `€${Number.parseFloat(value).toFixed(2)}`}
+                formatter={(value: any) => `€${Number(value).toFixed(2)}`}
               />
               <Legend
                 wrapperStyle={{

@@ -26,7 +26,7 @@ import { formatCurrency, formatDate } from "@/lib/format-utils"
 import { itemsApi, ApiError, steamApi } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import { Edit, Trash2, RefreshCcw, ChevronUp, ChevronDown } from "lucide-react"
-import { ItemDetailDialog } from "@/components/item-detail-dialog"
+import { ItemDetailDialog } from "@/components/items/item-detail-dialog"
 import "@/styles/glass.css"
 import { cn } from "@/lib/utils"
 
@@ -35,6 +35,7 @@ interface ItemsTableProps {
   categories: any[]
   isLoading: boolean
   onDelete: () => void
+  onPriceUpdate: () => void
   onEdit: (item: any) => void
   editingId?: string | null
 }
@@ -122,6 +123,7 @@ export function ItemsTable({
   categories,
   isLoading,
   onDelete,
+  onPriceUpdate,
   onEdit,
   editingId
 }: Readonly<ItemsTableProps>) {
@@ -285,6 +287,7 @@ export function ItemsTable({
     try {
       await steamApi.updateById(id)
       toast({ title: "Price updated", description: `"${name}" updated from Steam.` })
+      onPriceUpdate()
     } catch (error) {
       if (error instanceof ApiError) {
         const messages = Object.values(error.errors ?? {}).flat().join(", ")

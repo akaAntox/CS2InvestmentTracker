@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { CategoriesTable } from "@/components/categories-table"
-import { CategoryDialog } from "@/components/category-dialog"
+import { CategoriesTable } from "@/components/categories/categories-table"
+import { CategoryDialog } from "@/components/categories/category-dialog"
 import { Button } from "@/components/ui/button"
 import { useApi } from "@/hooks/use-api"
 import { categoriesApi } from "@/lib/api-client"
