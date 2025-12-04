@@ -12,13 +12,6 @@ import { itemsApi, ApiError } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import { getErrorMessages } from "@/lib/format-utils"
 import { AlertCircle, Loader2 } from "lucide-react"
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select"
 
 interface ItemDialogProps {
   open: boolean
@@ -36,6 +29,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
     quantity: item?.quantity == null ? "" : String(item.quantity),
     buyPrice: item?.buyPrice == null ? "" : String(item.buyPrice),
   })
+  
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
@@ -59,16 +53,14 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
     if (!formData.quantity) clientErrors["quantity"] = ["Quantity is required"]
     if (formData.quantity !== "") {
       const q = Number(formData.quantity)
-      if (!Number.isInteger(q) || q <= 0) clientErrors["quantity"] = ["Quantity must be an integer > 0"]
+      if (!Number.isInteger(q) || q < 0) clientErrors["quantity"] = ["Quantity must be an integer > 0"]
     }
 
     // Buy Price
-    if (formData.buyPrice === "" || formData.buyPrice == null) {
-      clientErrors["buyPrice"] = ["Buy price is required"]
-    } else {
+    if (formData.buyPrice !== "" && formData.buyPrice != null) {
       const normalized = String(formData.buyPrice).replace(",", ".")
       const price = Number.parseFloat(normalized)
-      if (Number.isNaN(price) || price <= 0) {
+      if (Number.isNaN(price) || price < 0) {
         clientErrors["buyPrice"] = ["Buy price must be a positive number"]
       }
     }
