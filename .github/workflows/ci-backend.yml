@@ -65,8 +65,8 @@ jobs:
           dotnet publish CS2InvestmentTracker.sln \
           -c Release \
           -r linux-arm64 \
-          --self-contained
-          -o ./publish_output \
+          --self-contained \
+          -o ./publish_output
 
       - name: Test
         run: |
