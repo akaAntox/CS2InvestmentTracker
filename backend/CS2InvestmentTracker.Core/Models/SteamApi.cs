@@ -3,6 +3,8 @@ using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -57,7 +59,7 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
     /// <summary>
     /// Aggiorna il prezzo per un singolo item.
     /// </summary>
-    public async Task UpdateItemPriceAsync(Item item, bool createItemInDb = false)
+    public async Task UpdateItemPriceAsync(Item item, bool createItemInDb = false, CancellationToken ct = default)
     {
         logger.LogInformation("Updating price for item {Name}", item.Name);
         await WaitForRateLimitSlotAsync(CancellationToken.None);
@@ -66,13 +68,32 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
         var encodedItemName = Uri.EscapeDataString(item.Name);
         var apiUrl = PricesLink + encodedItemName;
 
-        var response = await http.GetAsync(apiUrl);
+        // Applica il rate limit PRIMA di fare la chiamata HTTP
+        await WaitForRateLimitSlotAsync(ct);
+
+        HttpResponseMessage response = await http.GetAsync(apiUrl, ct);
+
+        // Gestione esplicita del 429
+        if (response.StatusCode == (HttpStatusCode)429)
+        {
+            var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(5);
+            logger.LogWarning("Steam returned 429 TooManyRequests for {ItemName}. Backing off for {RetryAfter} seconds",
+                item.Name, retryAfter.TotalSeconds);
+
+            await Task.Delay(retryAfter, ct);
+
+            // Riapplichiamo anche il nostro rate limit
+            await WaitForRateLimitSlotAsync(ct);
+            response = await http.GetAsync(apiUrl, ct);
+        }
+
         response.EnsureSuccessStatusCode();
 
-        var responseBody = await response.Content.ReadAsStringAsync();
+        var responseBody = await response.Content.ReadAsStringAsync(ct);
         var apiResponse = JsonSerializer.Deserialize<SteamApiResponse>(responseBody);
 
-        if (apiResponse == null || !apiResponse.Success) throw new ApiResponseException($"Invalid API response");
+        if (apiResponse == null || !apiResponse.Success)
+            throw new ApiResponseException($"Invalid API response");
         if (apiResponse.LowestPrice == 0 && apiResponse.MedianPrice == 0 && apiResponse.Volume == 0)
             throw new ItemNotFoundException($"No price data available for item '{item.Name}'");
 
@@ -94,6 +115,9 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
 
         var http = httpClientFactory.CreateClient(nameof(SteamApi));
         var listingUrl = ListingBase + Uri.EscapeDataString(item.Name);
+
+        // Applichiamo anche qui il rate limit per sicurezza
+        await WaitForRateLimitSlotAsync(ct);
 
         using var req = new HttpRequestMessage(HttpMethod.Get, listingUrl);
         req.Headers.Accept.ParseAdd("text/html");
