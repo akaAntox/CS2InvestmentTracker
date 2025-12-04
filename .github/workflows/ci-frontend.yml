@@ -21,9 +21,9 @@ jobs:
       pull-requests: write
 
     env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # tienilo separato se vuoi
-      SONAR_PROJECT_KEY: akaAntox_CS2InvestmentTracker_Frontend
-      SONAR_ORG: akaantox
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_PROJECT_KEY: ${{ env.SONAR_PROJECT_KEY }}
+      SONAR_ORG: ${{ env.SONAR_ORG }}
 
     defaults:
       run:
