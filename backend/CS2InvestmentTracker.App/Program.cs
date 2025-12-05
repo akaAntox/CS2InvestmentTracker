@@ -59,24 +59,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
         policy
-            //.WithOrigins(
-            //    "http://localhost:3000",
-            //    "https://localhost:3000",
-            //    "http://127.0.0.1:3000",
-            //    "https://127.0.0.1:3000",
-            //    "http://localhost:3001",
-            //    "https://localhost:3001",
-            //    "http://127.0.0.1:3001",
-            //    "https://127.0.0.1:3001"
-            //)
-            .SetIsOriginAllowed(origin =>
-            {
-                return
-                    origin.StartsWith("http://localhost:") || origin.StartsWith("https://localhost:") ||
-                    origin.StartsWith("http://127.0.0.1:") || origin.StartsWith("https://127.0.0.1:") ||
-                    origin.StartsWith("http://192.168.1.51:") || origin.StartsWith("https://192.168.1.51");
-            })
-            //.AllowAnyOrigin()
+            .WithOrigins(
+                "https://cs-2-investment-tracker.vercel.app/",
+                "http://localhost:3000"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()
