@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api/proxy/:path*",
-      "destination": "http://akaantox.ooguy.com:8080/api/:path*"
+      "source": "/backend/:path*",
+      "destination": "http://akaantox.ooguy.com:8080/:path*"
     }
   ]
 }
