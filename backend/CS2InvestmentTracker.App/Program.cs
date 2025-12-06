@@ -60,7 +60,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(FrontendCorsPolicy, policy =>
         policy
             .WithOrigins(
-                "https://cs-2-investment-tracker.vercel.app/",
+                "https://cs-2-investment-tracker.vercel.app",
                 "http://localhost:3000"
             )
             .AllowAnyHeader()

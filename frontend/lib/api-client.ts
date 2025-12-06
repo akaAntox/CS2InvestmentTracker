@@ -3,7 +3,7 @@ const getApiBaseUrl = () => {
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
   
-  return "http://localhost:5000"; 
+  return "https://localhost:7256"; 
 }
 
 interface RequestOptions {

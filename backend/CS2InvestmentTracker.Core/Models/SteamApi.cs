@@ -61,15 +61,12 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
     /// </summary>
     public async Task UpdateItemPriceAsync(Item item, bool createItemInDb = false, CancellationToken ct = default)
     {
+        await WaitForRateLimitSlotAsync(ct);
         logger.LogInformation("Updating price for item {Name}", item.Name);
-        await WaitForRateLimitSlotAsync(CancellationToken.None);
         using var http = httpClientFactory.CreateClient(nameof(SteamApi));
 
         var encodedItemName = Uri.EscapeDataString(item.Name);
         var apiUrl = PricesLink + encodedItemName;
-
-        // Applica il rate limit PRIMA di fare la chiamata HTTP
-        await WaitForRateLimitSlotAsync(ct);
 
         HttpResponseMessage response = await http.GetAsync(apiUrl, ct);
 
