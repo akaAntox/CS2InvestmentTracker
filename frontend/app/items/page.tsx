@@ -24,7 +24,11 @@ export default function ItemsPage() {
     mutate: mutateItems,
   } = useApi("items-list", () => itemsApi.getAll())
 
-  const { data: categories = [] } = useApi("categories-list", () => categoriesApi.getAll())
+  const { data: categories = [] } = useApi("categories-list", () => 
+    categoriesApi.getAll().then((cats) => 
+      cats.toSorted((a, b) => a.name.localeCompare(b.name))
+    )
+  )
 
   const handleEdit = (item: any) => {
     setSelectedItem(item)

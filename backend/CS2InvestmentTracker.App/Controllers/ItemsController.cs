@@ -101,7 +101,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
             // Delete the item
             logger.LogInformation("Deleting item id {Id}", itemId);
             await itemRepository.DeleteAsync(i => i.Id == itemId);
-            await eventLogRepository.NewEvent(ActionType.Delete, $"Item id '{itemId}' deleted.");
+            await eventLogRepository.NewEvent(ActionType.Delete, $"Item '{existingItem.Name}' deleted.");
             return Ok();
         }
         catch (Exception ex)
@@ -163,7 +163,7 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
         try
         {
             // Retrieve all items with their categories
-            logger.LogInformation("Getting all items");
+            logger.LogInformation("Retrieving all items");
             var items = await itemRepository.GetItemsWithCategoryAsync();
             return Ok(items);
         }
