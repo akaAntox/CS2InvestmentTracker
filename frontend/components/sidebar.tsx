@@ -1,11 +1,10 @@
 "use client"
 
 import type React from "react"
-
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Home, Package, Tag, Calendar } from "lucide-react"
+import { Home, Package, Tag, Calendar, X } from "lucide-react"
 import "@/styles/glass.css"
 
 interface NavItem {
@@ -21,23 +20,35 @@ const navItems: NavItem[] = [
   { label: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  className?: string
+  onClose?: () => void // Funzione opzionale per chiudere il menu su mobile
+}
+
+export function Sidebar({ className, onClose }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <aside className="sidebar-glass fixed left-0 top-0 h-screen w-64 flex flex-col">
+    <aside className={cn("sidebar-glass h-full flex flex-col", className)}>
       {/* Logo/Header */}
-      <div className="sidebar-glass-header p-6 mb-4">
+      <div className="sidebar-glass-header p-6 mb-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded flex items-center justify-center overflow-hidden">
-            <img src="/logo.png" alt="CS2" className="max-w-full max-h-full" />
+          <div className="w-10 h-10 rounded flex items-center justify-center overflow-hidden bg-white/10">
+            {/* Fallback se manca l'immagine, altrimenti usa <img /> */}
+            <img src="/logo.png" alt="CS2" className="max-w-full max-h-full object-cover" />
           </div>
-          <h1 className="text-lg font-bold">CS2 Investment</h1>
+          <h1 className="text-lg font-bold truncate">CS2 Inv.</h1>
         </div>
+        
+        {onClose && (
+          <button onClick={onClose} className="md:hidden text-white/70 hover:text-white">
+            <X className="w-6 h-6" />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-2 space-y-2">
+      <nav className="flex-1 px-4 py-2 space-y-2 overflow-y-auto">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -47,8 +58,9 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={cn(
-                "sidebar-link flex items-center gap-3 px-4 py-3",
+                "sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
                 isActive && "sidebar-link-active"
               )}
             >
@@ -60,8 +72,8 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="sidebar-glass-footer p-4 text-xs">
-        <p>v1.0.0</p>
+      <div className="sidebar-glass-footer p-4 text-xs mt-auto">
+        <p className="opacity-50">v1.0.0</p>
       </div>
     </aside>
   )
