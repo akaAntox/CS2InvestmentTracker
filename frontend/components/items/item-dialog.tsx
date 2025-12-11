@@ -131,7 +131,10 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-dialog">
+      {/* MODIFICA 1: max-h-[90vh] e overflow-y-auto 
+        Assicura che la modale sia scrollabile su schermi piccoli o quando compare la tastiera 
+      */}
+      <DialogContent className="glass-dialog w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{item ? "Edit Item" : "New Item"}</DialogTitle>
           <DialogDescription>
@@ -139,7 +142,10 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* MODIFICA 2: space-y-4 su mobile, space-y-6 su schermi più grandi 
+          Compatta il form su mobile per risparmiare spazio verticale
+        */}
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Alert globale (errori server) */}
           {errorMessages.length > 0 && (
             <Alert variant="destructive">
@@ -179,7 +185,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
                 <Label htmlFor="item-category">Category *</Label>
                 <select
                   id="item-category"
-                  className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="mt-2 w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   value={formData.categoryId}
                   onChange={(e) => setFormData((s) => ({ ...s, categoryId: e.target.value }))}
                   aria-invalid={!!errors.categoryId}
@@ -228,7 +234,8 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
               <div>
                 <Label htmlFor="item-buyPrice">Buy Price *</Label>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="glass-tile inline-flex shrink-0 rounded-md border border-input px-2 py-2 text-sm">€</span>
+                  <span className="glass-tile inline-flex shrink-0 items-center justify-center rounded-md border border-input px-3 h-10 text-sm">€</span>
+                  {/* MODIFICA 3: flex-1 assicura che l'input riempia lo spazio */}
                   <Input
                     id="item-buyPrice"
                     type="text"
@@ -236,7 +243,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
                     value={formData.buyPrice}
                     onChange={(e) => setFormData((s) => ({ ...s, buyPrice: e.target.value }))}
                     placeholder="0.00"
-                    className="glass-tile"
+                    className="glass-tile flex-1"
                     aria-invalid={!!errors.buyPrice}
                     aria-describedby={errors.buyPrice ? "item-buyPrice-error" : undefined}
                   />
@@ -267,7 +274,8 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2">
+          {/* MODIFICA 4: pb-2 su mobile per dare un po' di respiro dal fondo dello schermo */}
+          <div className="flex justify-end gap-2 pt-2 pb-2 sm:pb-0">
             <Button
               type="button"
               variant="outline"

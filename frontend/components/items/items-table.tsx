@@ -310,14 +310,15 @@ export function ItemsTable({
     )
   }
 
-  // UI helpers
+  // UI helpers: Updated to accept className for responsive hiding
   const SortableHead = ({
     label,
     k,
     alignRight,
     title,
-  }: { label: string; k: SortKey; alignRight?: boolean; title?: string }) => (
-    <TableHead className={alignRight ? "text-right" : ""} title={title}>
+    className
+  }: { label: string; k: SortKey; alignRight?: boolean; title?: string; className?: string }) => (
+    <TableHead className={cn(alignRight ? "text-right" : "", className)} title={title}>
       <button
         type="button"
         onClick={() => toggleSort(k)}
@@ -331,40 +332,41 @@ export function ItemsTable({
 
   return (
     <div className="glass flex flex-col h-full min-h-0 space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 rounded-lg">
+      {/* Filters: Adjusted for mobile stacking */}
+      <div className="flex flex-col md:flex-row gap-3 rounded-lg">
         <Input
           placeholder="Search items..."
           value={searchTerm}
           onChange={(e) => { setSearchTerm(e.target.value); setPage(1) }}
           className="flex-1 glass-tile border-r border-border"
         />
-        <Select
-          value={selectedCategory}
-          onValueChange={(val) => { setSelectedCategory(val); setPage(1) }}
-        >
-          <SelectTrigger className="h-10 min-w-[180px] rounded-lg glass-tile border border-border text-foreground">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
+        
+        <div className="flex gap-3">
+          <Select
+            value={selectedCategory}
+            onValueChange={(val) => { setSelectedCategory(val); setPage(1) }}
+          >
+            <SelectTrigger className="h-10 flex-1 md:w-[180px] rounded-lg glass-tile border border-border text-foreground">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
 
-          <SelectContent className="glass-panel glass-select-content">
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories?.map((cat: any) => (
-              <SelectItem key={cat.id} value={String(cat.id)}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectContent className="glass-panel glass-select-content">
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories?.map((cat: any) => (
+                <SelectItem key={cat.id} value={String(cat.id)}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        {!CHUNK_SCROLL && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows:</span>
+          {!CHUNK_SCROLL && (
+            <div className="flex items-center gap-2">
               <Select
                 value={String(pageSize)}
                 onValueChange={(val) => { setPageSize(Number(val)); setPage(1) }}
               >
-                <SelectTrigger className="h-10 px-3 rounded-lg glass-tile border border-border text-foreground min-w-[100px]">
+                <SelectTrigger className="h-10 px-3 rounded-lg glass-tile border border-border text-foreground min-w-[80px]">
                   <SelectValue placeholder={pageSize} />
                 </SelectTrigger>
 
@@ -376,26 +378,45 @@ export function ItemsTable({
                   ))}
                 </SelectContent>
               </Select>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="glass-table rounded-lg flex-1 min-h-0 overflow-hidden">
-        <div className="overflow-x-auto h-full">
+        <div className="overflow-x-auto h-full w-full"> {/* w-full ensures it doesn't overflow parent */}
           <div className="h-full overflow-y-auto">
-            <Table className="min-w-[900px] glass-panel">
+            {/* Removed min-w-[900px] to allow responsive shrinking, added min-w for very small screens if needed */}
+            <Table className="min-w-full glass-panel">
               <TableHeader className="glass-tile border-r sticky top-0 z-10">
                 <TableRow>
+                  {/* Priority 1: Name (Always Visible) */}
                   <SortableHead label="Name" k="name" />
-                  <SortableHead label="Category" k="category" />
-                  <SortableHead label="Quantity" k="quantity" alignRight />
-                  <SortableHead label="Payed" k="buy" alignRight title="Buy Price" />
-                  <SortableHead label="Total Payed" k="totalPayed" alignRight />
-                  <SortableHead label="Steam Price" k="steam" alignRight title="Steam Price (from Steam API)" />
-                  <SortableHead label="Net Profit" k="netProfit" alignRight title="Net Profit at -15% tax" />
-                  <SortableHead label="Total Net Profit" k="totalNetProfit" alignRight title="Total Net Profit at -15% tax" />
-                  <SortableHead label="Yield" k="percentNetProfit" alignRight title="Yield at -15% tax" />
-                  <SortableHead label="Last Update" k="lastUpdate" alignRight />
+                  
+                  {/* Priority 2: Category (Hidden on Mobile) */}
+                  <SortableHead label="Category" k="category" className="hidden md:table-cell" />
+                  
+                  {/* Priority 3: Quantity (Hidden on Mobile/Tablet) */}
+                  <SortableHead label="Qty" k="quantity" alignRight className="hidden lg:table-cell" />
+                  
+                  {/* Priority 4: Payed Prices (Hidden on smaller screens) */}
+                  <SortableHead label="Payed" k="buy" alignRight title="Buy Price" className="hidden xl:table-cell" />
+                  <SortableHead label="Total" k="totalPayed" alignRight className="hidden 2xl:table-cell" />
+                  
+                  {/* Priority 2: Steam Price (Hidden on very small screens) */}
+                  <SortableHead label="Steam" k="steam" alignRight title="Steam Price" className="hidden sm:table-cell" />
+                  
+                  {/* Priority 1: Net Profit (Always Visible) */}
+                  <SortableHead label="Profit" k="netProfit" alignRight title="Net Profit" />
+                  
+                  {/* Priority 3: Extended Profit stats (Hidden on Mobile/Tablet) */}
+                  <SortableHead label="Tot. Profit" k="totalNetProfit" alignRight title="Total Net Profit" className="hidden xl:table-cell" />
+                  <SortableHead label="Yield" k="percentNetProfit" alignRight title="Yield" className="hidden lg:table-cell" />
+                  
+                  {/* Priority 4: Date (Hidden on most screens unless huge) */}
+                  <SortableHead label="Updated" k="lastUpdate" alignRight className="hidden 2xl:table-cell" />
+                  
+                  {/* Priority 1: Actions (Always Visible) */}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -431,12 +452,27 @@ export function ItemsTable({
                         className="glass-table-row cursor-pointer"
                         onClick={() => setDetailItem(item)}
                       >
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell><Badge variant="outline">{category?.name || "N/A"}</Badge></TableCell>
-                        <TableCell className="text-right">{c.qty || "--"}</TableCell>
-                        <TableCell className="text-right">{c.buy ? formatCurrency(c.buy) : "--"}</TableCell>
-                        <TableCell className="text-right">{totalPayed ? formatCurrency(totalPayed) : "--"}</TableCell>
-                        <TableCell className="text-right">
+                        {/* Name - Always visible */}
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col">
+                            <span>{item.name}</span>
+                            {/* Show category as small text on mobile since column is hidden */}
+                            <span className="text-xs text-muted-foreground md:hidden">{category?.name}</span>
+                          </div>
+                        </TableCell>
+                        
+                        {/* Category - Hidden md */}
+                        <TableCell className="hidden md:table-cell"><Badge variant="outline">{category?.name || "N/A"}</Badge></TableCell>
+                        
+                        {/* Quantity - Hidden lg */}
+                        <TableCell className="text-right hidden lg:table-cell">{c.qty || "--"}</TableCell>
+                        
+                        {/* Payed - Hidden xl */}
+                        <TableCell className="text-right hidden xl:table-cell">{c.buy ? formatCurrency(c.buy) : "--"}</TableCell>
+                        <TableCell className="text-right hidden 2xl:table-cell">{totalPayed ? formatCurrency(totalPayed) : "--"}</TableCell>
+                        
+                        {/* Steam - Hidden sm */}
+                        <TableCell className="text-right hidden sm:table-cell">
                           {steam ? (
                             <span
                               style={steamTextStyle}
@@ -447,6 +483,8 @@ export function ItemsTable({
                             </span>
                           ) : ("--")}
                         </TableCell>
+                        
+                        {/* Net Profit - Always visible */}
                         <TableCell className="text-right">
                           {c.netProfit === null ? "--" : (
                             <span
@@ -458,18 +496,21 @@ export function ItemsTable({
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        
+                        {/* Total Net Profit - Hidden xl */}
+                        <TableCell className="text-right hidden xl:table-cell">
                           {c.totalNetProfit === null ? "--" : (
                             <span
                               className="inline-flex items-center justify-end px-2 py-0.5 rounded border text-sm font-medium"
                               style={profitCellStyle}
-                              title={c.percentNetProfit === null ? "" : `${c.percentNetProfit.toFixed(2)}%`}
                             >
                               {`${c.totalNetProfit > 0 ? "+" : c.totalNetProfit < 0 ? "−" : ""}${formatCurrency(Math.abs(c.totalNetProfit))}`}
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        
+                        {/* Yield - Hidden lg */}
+                        <TableCell className="text-right hidden lg:table-cell">
                           {c.percentNetProfit === null ? "--" : (
                             <span
                               className="inline-flex items-center justify-end px-2 py-0.5 rounded border text-sm font-medium tabular-nums"
@@ -479,9 +520,13 @@ export function ItemsTable({
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right text-xs text-muted-foreground">
+                        
+                        {/* Date - Hidden 2xl */}
+                        <TableCell className="text-right text-xs text-muted-foreground hidden 2xl:table-cell">
                           {item.editDate ? formatDate(item.editDate) : formatDate(item.insertDate)}
                         </TableCell>
+                        
+                        {/* Actions - Always visible */}
                         <TableCell className="text-right" onClick={stop} onMouseDown={stop}>
                           <div className="flex items-center justify-end gap-1">
                             <Button
@@ -489,30 +534,29 @@ export function ItemsTable({
                               variant="ghost"
                               size="sm"
                               disabled={isRowUpdating || isRowDeleting}
-                              className={cn("btn-glass-ghost", isRowUpdating && "animate-pulse")}
-                              title="Update price from Steam"
+                              className={cn("btn-glass-ghost px-2 sm:px-3", isRowUpdating && "animate-pulse")}
                             >
                               <RefreshCcw className={`w-4 h-4 ${isRowUpdating ? "animate-spin" : ""}`} />
-                              <span className="sr-only">Update price</span>
                             </Button>
+                            
+                            {/* Hide Edit button on super small screens, user can click row */}
                             <Button
                               onClick={() => onEdit(item)}
                               disabled={editingId === item.id || isRowUpdating || isRowDeleting}
                               variant="ghost"
                               size="sm"
-                              className={cn("btn-glass-ghost", isRowUpdating && "animate-pulse")}
-                              title="Edit"
+                              className={cn("btn-glass-ghost px-2 sm:px-3 hidden sm:inline-flex", isRowUpdating && "animate-pulse")}
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
+                            
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className={cn("btn-glass-ghost", isRowUpdating && "animate-pulse")}
+                                  className={cn("btn-glass-ghost px-2 sm:px-3", isRowUpdating && "animate-pulse")}
                                   disabled={isRowUpdating || isRowDeleting}
-                                  title="Delete"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -522,7 +566,7 @@ export function ItemsTable({
                                 <AlertDialogDescription>
                                   Are you sure you want to delete "{item.name}"? This action cannot be undone.
                                 </AlertDialogDescription>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 justify-end mt-4">
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => handleDelete(item.id)}
@@ -549,18 +593,18 @@ export function ItemsTable({
         </div>
       </div>
 
-      {/* Footer paginazione */}
+      {/* Footer paginazione: Stack on mobile */}
       {!CHUNK_SCROLL && sorted.length > 0 && (
-        <div className="glass-panel flex items-center justify-between gap-3 text-sm px-4 py-3 rounded-lg">
-          <div className="text-muted-foreground">
+        <div className="glass-panel flex flex-col sm:flex-row items-center justify-between gap-3 text-sm px-4 py-3 rounded-lg">
+          <div className="text-muted-foreground text-center sm:text-left">
             Showing <strong>{paged.length}</strong> of <strong>{sorted.length}</strong> items
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1}>First</Button>
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Prev</Button>
-            <span className="px-2">Page {page} / {totalPages}</span>
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
-            <Button variant="outline" size="sm" onClick={() => setPage(totalPages)} disabled={page === totalPages}>Last</Button>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1} className="px-2 sm:px-4">First</Button>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-2 sm:px-4">Prev</Button>
+            <span className="px-1 sm:px-2 min-w-[3rem] text-center">{page} / {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-2 sm:px-4">Next</Button>
+            <Button variant="outline" size="sm" onClick={() => setPage(totalPages)} disabled={page === totalPages} className="px-2 sm:px-4">Last</Button>
           </div>
         </div>
       )}

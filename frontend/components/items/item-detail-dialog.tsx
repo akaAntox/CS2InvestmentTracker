@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrency, formatDate } from "@/lib/format-utils"
 import { steamApi } from "@/lib/api-client"
+import { cn } from "@/lib/utils"
 
 type Item = {
   id: string | number
@@ -72,6 +73,7 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
     async function load() { 
       if (!open || !safeItem?.id) return setImgLoading(true) 
       try { 
+        setImgLoading(true)
         const res: any = await steamApi.getImage(safeItem?.id as any) 
         if (aborted) return 
         const url = typeof res === "string" ? res : (res?.url ?? null)
@@ -87,7 +89,7 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
     } 
     load() 
     return () => { aborted = true } 
-  }, [open, item?.id])
+  }, [open, safeItem?.id])
 
   const title = safeItem?.name ?? "Element Details"
 
@@ -95,52 +97,51 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         key={safeItem?.id ?? "noitem"}
-        className="
-          glass-dialog
-          max-w-[96vw] md:max-w-[90vw] lg:max-w-[1100px] xl:max-w-5xl
-          max-h-[95vh] overflow-y-auto
-          p-0 sm:rounded-lg
-        "
+        className={cn(
+          "glass-dialog p-0 gap-0",
+          "w-full max-w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-5xl",
+          "max-h-[90vh] flex flex-col overflow-hidden", // Fix height constraints
+          "sm:rounded-xl"
+        )}
       >
-        <DialogHeader className="px-5 pt-5 pb-3 border-b min-w-0">
-          <DialogTitle className="truncate text-balance">{title}</DialogTitle>
+        <DialogHeader className="px-4 py-4 sm:px-6 sm:py-5 border-b min-h-0 flex-shrink-0">
+          <DialogTitle className="text-xl sm:text-2xl truncate pr-6">{title}</DialogTitle>
           {(categoryLabel || safeItem?.marketName || safeItem?.quantity != null) && (
             <DialogDescription className="flex flex-wrap gap-2 mt-2">
-              {categoryLabel && <Badge variant="secondary">{categoryLabel}</Badge>}
-              {safeItem?.marketName && <Badge>{safeItem.marketName}</Badge>}
-              {safeItem?.quantity != null && <Badge variant="outline">Qty: {safeItem.quantity}</Badge>}
+              {categoryLabel && <Badge variant="secondary" className="bg-secondary/50">{categoryLabel}</Badge>}
+              {safeItem?.marketName && <Badge variant="outline" className="border-border/50">{safeItem.marketName}</Badge>}
+              {safeItem?.quantity != null && <Badge variant="default">Qty: {safeItem.quantity}</Badge>}
             </DialogDescription>
           )}
         </DialogHeader>
 
-        <div className="p-5 min-h-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* IMMAGINE */}
-            <section className="min-w-0">
-              <div className="w-full rounded-md border-2 overflow-hidden">
-                <div className="relative w-full aspect-4/3 max-h-80 sm:max-h-[360px] md:max-h-[420px]">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+            
+            {/* COLONNA SINISTRA: Immagine e Date */}
+            <section className="flex flex-col gap-4">
+              <div className="w-full rounded-lg border bg-card/50 overflow-hidden shadow-sm">
+                <div className="relative w-full aspect-[4/3] md:aspect-square lg:aspect-[4/3]">
                   {imgLoading ? (
-                    <div className="p-4">
-                      <Skeleton className="w-full h-64" />
-                      <div className="mt-3 flex gap-2">
+                    <div className="p-4 w-full h-full flex flex-col">
+                      <Skeleton className="w-full flex-1 rounded-md" />
+                      <div className="mt-4 flex gap-2">
                         <Skeleton className="h-4 w-1/3" />
-                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-1/4" />
                       </div>
                     </div>
                   ) : imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={imageUrl}
                       alt={safeItem?.name ?? "Item image"}
-                      className="absolute inset-0 w-full h-full object-contain"
+                      className="absolute inset-0 w-full h-full object-contain p-2"
                       loading="lazy"
-                      decoding="async"
-                      fetchPriority="low"
                       onError={() => setImgError("Image not available")}
-                      sizes="(max-width: 768px) 100vw, 50vw"
                     />
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-sm text-muted-foreground text-center">
+                      <span className="text-4xl">🖼️</span>
                       <span>{imgError ?? "No image available"}</span>
                     </div>
                   )}
@@ -148,49 +149,66 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
               </div>
 
               {(safeItem?.createdAt || safeItem?.updatedAt || safeItem?.insertDate || safeItem?.editDate) && (
-                <div className="mt-3 text-xs text-muted-foreground">
-                  {safeItem?.createdAt && <span>Creato: {formatDate(safeItem.createdAt as any)}</span>}
-                  {safeItem?.updatedAt && <span className="ml-2">Aggiornato: {formatDate(safeItem.updatedAt as any)}</span>}
-                  {safeItem?.insertDate && <span className="ml-2">Inserito: {formatDate(safeItem.insertDate as any)}</span>}
-                  {safeItem?.editDate && <span className="ml-2">Modificato: {formatDate(safeItem.editDate as any)}</span>}
+                <div className="rounded-lg bg-secondary/20 p-3 text-xs text-muted-foreground space-y-1">
+                  {safeItem?.createdAt && <div className="flex justify-between"><span>Created:</span> <span className="font-mono">{formatDate(safeItem.createdAt as any)}</span></div>}
+                  {safeItem?.insertDate && <div className="flex justify-between"><span>Inserted:</span> <span className="font-mono">{formatDate(safeItem.insertDate as any)}</span></div>}
+                  {safeItem?.updatedAt && <div className="flex justify-between"><span>Updated:</span> <span className="font-mono">{formatDate(safeItem.updatedAt as any)}</span></div>}
+                  {safeItem?.editDate && <div className="flex justify-between"><span>Modified:</span> <span className="font-mono">{formatDate(safeItem.editDate as any)}</span></div>}
                 </div>
               )}
             </section>
 
-            {/* DESCRIZIONE + DETTAGLI */}
-            <section className="min-w-0">
-              <div className="prose prose-sm md:prose-base max-w-none wrap-break-word hyphens-auto text-foreground">
-                {loading ? (
-                  <div>
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-full mt-3" />
-                    <Skeleton className="h-4 w-5/6 mt-2" />
-                    <Skeleton className="h-4 w-2/3 mt-2" />
-                  </div>
-                ) : safeItem?.description ? (
-                  <p className="whitespace-pre-wrap">{safeItem.description}</p>
-                ) : (
-                  <p className="text-muted-foreground">No notes.</p>
-                )}
+            {/* COLONNA DESTRA: Descrizione e Statistiche */}
+            <section className="flex flex-col gap-6 min-w-0">
+              
+              {/* Descrizione */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-foreground/90 flex items-center gap-2">
+                  Description
+                </h3>
+                <div className="rounded-lg border bg-card/30 p-3 text-sm text-foreground/80 break-words whitespace-pre-wrap max-h-40 overflow-y-auto">
+                  {loading ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </div>
+                  ) : safeItem?.description ? (
+                    safeItem.description
+                  ) : (
+                    <span className="text-muted-foreground italic">No description available.</span>
+                  )}
+                </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <Stat label="Purchase price (unit)" value={fmtCur(safeItem?.buyPrice)} />
-                <Stat label="Minimum sell price (unit)" value={fmtCur(safeItem?.minSellPrice)} />
-                <Stat label="Average price (unit)" value={fmtCur(safeItem?.avgSellPrice)} />
-                <Stat label="Sales volume" value={fmt(safeItem?.sellVolume)} />
-                <Stat label="Total expenditure" value={fmtCur(safeItem?.totalBuyPrice)} />
-                <Stat label="Theoretical revenue (min)" value={fmtCur(safeItem?.totalMinSellPrice)} />
-                <Stat label="Net profit (unit)" value={fmtCur(safeItem?.netProfit)} />
-                <Stat label="Total net profit" value={fmtCur(safeItem?.totalNetProfit)} />
-                <Stat
-                  label="Yield %"
-                  value={
-                    safeItem?.percentNetProfit == null
-                      ? "—"
-                      : `${Number(safeItem.percentNetProfit).toFixed(2)}%`
-                  }
-                />
+              {/* Griglia Statistiche */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-foreground/90">Market Data</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                  <Stat label="Buy (Unit)" value={fmtCur(safeItem?.buyPrice)} />
+                  <Stat label="Sell (Unit)" value={fmtCur(safeItem?.minSellPrice)} />
+                  <Stat label="Avg Price" value={fmtCur(safeItem?.avgSellPrice)} />
+                  
+                  <Stat label="Volume" value={fmt(safeItem?.sellVolume)} />
+                  <Stat label="Total Cost" value={fmtCur(safeItem?.totalBuyPrice)} />
+                  <Stat label="Est. Revenue" value={fmtCur(safeItem?.totalMinSellPrice)} />
+                  
+                  <Stat 
+                    label="Net Profit" 
+                    value={fmtCur(safeItem?.netProfit)} 
+                    highlight={Number(safeItem?.netProfit ?? 0) > 0 ? "positive" : Number(safeItem?.netProfit ?? 0) < 0 ? "negative" : "neutral"}
+                  />
+                  <Stat 
+                    label="Tot. Profit" 
+                    value={fmtCur(safeItem?.totalNetProfit)}
+                    highlight={Number(safeItem?.totalNetProfit ?? 0) > 0 ? "positive" : Number(safeItem?.totalNetProfit ?? 0) < 0 ? "negative" : "neutral"}
+                  />
+                  <Stat
+                    label="Yield %"
+                    value={safeItem?.percentNetProfit == null ? "—" : `${Number(safeItem.percentNetProfit).toFixed(2)}%`}
+                    highlight={Number(safeItem?.percentNetProfit ?? 0) > 0 ? "positive" : Number(safeItem?.percentNetProfit ?? 0) < 0 ? "negative" : "neutral"}
+                  />
+                </div>
               </div>
             </section>
           </div>
@@ -200,11 +218,18 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
   )
 }
 
-function Stat({ label, value }: Readonly<{ label: string; value: string | number }>) {
+function Stat({ label, value, highlight = "neutral" }: Readonly<{ label: string; value: string | number, highlight?: "positive" | "negative" | "neutral" }>) {
+  const colorClass = 
+    highlight === "positive" ? "text-green-500" : 
+    highlight === "negative" ? "text-red-400" : 
+    "text-foreground";
+
   return (
-    <div className="rounded-md border p-3 min-w-0">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 font-medium truncate">{value}</div>
+    <div className="rounded-md border bg-card/40 p-3 min-w-0 flex flex-col justify-between">
+      <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
+      <div className={cn("mt-1 font-medium truncate text-sm sm:text-base", colorClass)} title={String(value)}>
+        {value}
+      </div>
     </div>
   )
 }

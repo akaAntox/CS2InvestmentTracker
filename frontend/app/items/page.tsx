@@ -73,25 +73,30 @@ export default function ItemsPage() {
     <DashboardLayout>
       {/* Root page container must fill and hide outer scroll */}
       <div className="glass flex flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Header */}
+        {/* Header - MODIFICATO PER RESPONSIVENESS */}
         <div className="glass-panel border-b border-border p-6 mx-6 mt-6">
-          <div className="flex items-center justify-between">
-            <div>
+          {/* Flexbox principale con adattamento al wrapping */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            {/* Blocco titolo e descrizione (sempre visibile) */}
+            <div className="mb-4 md:mb-0"> {/* Aggiunge margine in basso su schermi piccoli */}
               <h1 className="text-3xl font-bold text-foreground">Items</h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Complete management of your items
               </p>
             </div>
-            <div className="flex space-x-2">
+            
+            {/* Blocco pulsanti: flex-col su schermi piccoli, flex-row su schermi medi e oltre */}
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
               <Button
                 onClick={handleUpdatePrices}
                 disabled={isUpdating}
-                className="bg-primary hover:bg-primary/90"
+                className="bg-primary hover:bg-primary/90 w-full sm:w-auto" // Rende il pulsante a larghezza intera su schermi molto piccoli
               >
                 {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
-                Update Prices
+                <span className="hidden sm:inline">Update Prices</span> {/* Nasconde il testo su schermi molto piccoli */}
+                <span className="sm:hidden">Update</span> {/* Mostra testo più corto su schermi molto piccoli */}
               </Button>
-              <Button onClick={handleNew} className="bg-accent hover:bg-accent/90">
+              <Button onClick={handleNew} className="bg-accent hover:bg-accent/90 w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 New Item
               </Button>

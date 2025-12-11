@@ -130,8 +130,9 @@ export function CategoriesTable({
     )
   }
 
-  const SortableHead = ({ label, k }: { label: string; k: SortKey }) => (
-    <TableHead>
+  // Updated to accept className for responsive hiding
+  const SortableHead = ({ label, k, className }: { label: string; k: SortKey; className?: string }) => (
+    <TableHead className={className}>
       <button
         type="button"
         onClick={() => toggleSort(k)}
@@ -157,12 +158,14 @@ export function CategoriesTable({
 
       {/* Table wrapper: header fisso, body scrollabile */}
       <div className="glass-table rounded-lg flex-1 min-h-0 overflow-hidden">
-        <div className="h-full overflow-y-auto overflow-x-auto">
-          <Table className="min-w-[900px] glass-panel">
+        <div className="h-full overflow-y-auto overflow-x-auto w-full">
+          {/* Changed min-w-[900px] to min-w-full to allow shrinking on mobile */}
+          <Table className="min-w-full glass-panel">
             <TableHeader className="sticky top-0 z-20 glass-tile-head-table border-r text-right">
               <TableRow>
                 <SortableHead label="Name" k="name" />
-                <SortableHead label="Description" k="description" />
+                {/* Description column hidden on small screens */}
+                <SortableHead label="Description" k="description" className="hidden sm:table-cell" />
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -182,11 +185,24 @@ export function CategoriesTable({
                   const isRowDeleting = isDeleting === category.id
                   return (
                     <TableRow key={category.id} className="glass-table-row">
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="font-medium align-top">
+                        <div className="flex flex-col">
+                          <span>{category.name}</span>
+                          {/* Description shown under name ONLY on mobile */}
+                          {category.description && (
+                            <span className="text-xs text-muted-foreground sm:hidden mt-0.5 line-clamp-2">
+                              {category.description}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      
+                      {/* Description cell hidden on mobile */}
+                      <TableCell className="text-muted-foreground hidden sm:table-cell align-middle">
                         {category.description || "--"}
                       </TableCell>
-                      <TableCell className="text-right">
+                      
+                      <TableCell className="text-right align-middle">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             onClick={() => onEdit(category)}
@@ -223,7 +239,7 @@ export function CategoriesTable({
                                 Are you sure you want to delete &quot;{category.name}
                                 &quot;? This action cannot be undone.
                               </AlertDialogDescription>
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 justify-end mt-4">
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleDelete(category.id)}

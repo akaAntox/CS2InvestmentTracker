@@ -106,7 +106,10 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Reado
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-dialog">
+      {/* MODIFICA 1: max-h-[90vh] e overflow-y-auto 
+         Fondamentale per mobile quando la tastiera è aperta o in landscape
+      */}
+      <DialogContent className="glass-dialog w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{category ? "Edit Category" : "New Category"}</DialogTitle>
           <DialogDescription>
@@ -114,12 +117,15 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Reado
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* MODIFICA 2: space-y-4 su mobile per risparmiare spazio, 
+           space-y-6 su desktop per arieggiare
+        */}
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Global alert for server-side errors */}
           {errorMessages.length > 0 && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
+              <AlertDescription className="glass glass-panel">
                 <ul className="list-disc pl-5">
                   {errorMessages.map((msg, i) => (
                     <li key={i}>{msg}</li>
@@ -139,7 +145,7 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Reado
                   value={formData.name}
                   onChange={(e) => setFormData((s) => ({ ...s, name: e.target.value }))}
                   placeholder="Category name"
-                  className="mt-2"
+                  className="mt-2 glass-tile"
                   aria-invalid={!!errors.name}
                   aria-describedby={errors.name ? "cat-name-error" : undefined}
                 />
@@ -160,7 +166,7 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Reado
               value={formData.description}
               onChange={(e) => setFormData((s) => ({ ...s, description: e.target.value }))}
               placeholder="Optional description"
-              className="mt-2"
+              className="mt-2 glass-tile"
               rows={4}
               aria-invalid={!!errors.description}
               aria-describedby={errors.description ? "cat-description-error" : undefined}
@@ -173,7 +179,8 @@ export function CategoryDialog({ open, onOpenChange, category, onSubmit }: Reado
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2">
+          {/* MODIFICA 3: padding bottom su mobile per staccare dal bordo inferiore */}
+          <div className="flex justify-end gap-2 pt-2 pb-2 sm:pb-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
