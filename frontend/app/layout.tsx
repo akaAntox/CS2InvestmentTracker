@@ -10,7 +10,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Admin Dashboard",
-  description: "Gestione Inventory e Steam Market Prices",
+  description: "Inventory handling and Steam Market Prices",
   generator: "v0.app",
 }
 

@@ -9,7 +9,7 @@ public class EventLogRepository : GenericRepository<EventLog>
 
     public async Task NewEvent(ActionType action, string message) => await New(action, message, null, null);
 
-    public async Task NewEvent(ActionType action, string message, object values) => await New(action, message, null, values);
+    public async Task NewEvent(ActionType action, string message, object values) => await ((action == ActionType.Delete) ? New(action, message, values, null) : New(action, message, null, values));
 
     public async Task NewEvent(ActionType action, string message, object oldValues, object newValues) => await New(action, message, oldValues, newValues);
 

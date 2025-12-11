@@ -211,7 +211,7 @@ export default function Home() {
                   </p>
                 )}
               </div>
-              <Progress value={updateProgress} className="h-2" />
+              <Progress value={updateProgress} className="h-2 [&>div]:bg-emerald-500" />
               {totalCount != null && (
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Processed: {processedCount ?? 0}</span>

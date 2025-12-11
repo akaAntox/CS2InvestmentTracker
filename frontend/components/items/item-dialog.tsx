@@ -12,6 +12,13 @@ import { itemsApi, ApiError } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 import { getErrorMessages } from "@/lib/format-utils"
 import { AlertCircle, Loader2 } from "lucide-react"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
 
 interface ItemDialogProps {
   open: boolean
@@ -35,6 +42,8 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
   const { toast } = useToast()
 
   useEffect(() => {
+    if (!open) return
+
     setFormData({
       name: item?.name ?? "",
       description: item?.description ?? "",
@@ -43,7 +52,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
       buyPrice: item?.buyPrice == null ? "" : String(item.buyPrice),
     })
     setErrors({})
-  }, [item, categories])
+  }, [item, open, categories])
 
   const validate = () => {
     const clientErrors: Record<string, string[]> = {}
@@ -177,20 +186,23 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
 
               <div>
                 <Label htmlFor="item-category">Category *</Label>
-                <select
-                  id="item-category"
-                  className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={formData.categoryId}
-                  onChange={(e) => setFormData((s) => ({ ...s, categoryId: e.target.value }))}
+                <Select
+                  value={String(formData.categoryId)}
+                  onValueChange={(value) => setFormData((s) => ({ ...s, categoryId: value }))}
                   aria-invalid={!!errors.categoryId}
                   aria-describedby={errors.categoryId ? "item-category-error" : undefined}
                 >
+                <SelectTrigger id="item-category" className="mt-2 h-10 w-full rounded-lg glass-tile border border-border text-foreground">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent className="glass-panel glass-select-content">
                   {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <SelectItem key={c.id} value={String(c.id)}>
                       {c.name}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
+                </SelectContent>
+                </Select>
                 {errors.categoryId && (
                   <p id="item-category-error" className="mt-1 text-xs text-destructive">
                     {errors.categoryId[0]}
