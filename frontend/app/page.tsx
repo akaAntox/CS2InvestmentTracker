@@ -169,9 +169,9 @@ export default function Home() {
 
   return (
     <DashboardLayout variant={layoutVariant}>
-      <div className="glass dashboard-container flex flex-col h-full">
+      <div className="glass flex flex-col flex-1 min-h-0 h-full overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 glass-panel border-b border-border p-6 mx-6 mt-6">
+        <div className="glass-panel border-b border-border p-6 mx-6 mt-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
@@ -223,7 +223,7 @@ export default function Home() {
         </div>
 
         {/* KPI Grid */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1">
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard
