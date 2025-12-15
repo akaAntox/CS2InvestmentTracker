@@ -28,4 +28,12 @@ public class ItemRepository : GenericRepository<Item>
             .Include(i => i.Category)
             .ToListAsync();
     }
+
+    // Check for duplicate item names and buyprice
+    public async Task<bool> CheckDuplicates(string name, decimal buyPrice)
+    {
+        return await context.Items
+            .AsNoTracking()
+            .AnyAsync(i => i.Name == name && i.BuyPrice == buyPrice);
+    }
 }

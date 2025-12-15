@@ -35,11 +35,11 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
         try
         {
             // Check for existing item with the same name
-            var existingItem = await itemRepository.GetItemsByNameAsync(itemDto.Name);
-            if (existingItem.Count != 0)
+            var duplicateItems = await itemRepository.CheckDuplicates(itemDto.Name, itemDto.BuyPrice);
+            if (duplicateItems)
             {
                 logger.LogWarning("Error while adding item {Name}: Item already exists", itemDto.Name);
-                return Conflict("Item with the same name already exists.");
+                return Conflict("Item with the same name and price already exists.");
             }
 
             // Map DTO to entity
