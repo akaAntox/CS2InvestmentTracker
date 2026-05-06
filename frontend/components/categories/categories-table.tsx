@@ -233,7 +233,7 @@ export function CategoriesTable({
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
+                            <AlertDialogContent className="glass-dialog">
                               <AlertDialogTitle>Delete Category</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Are you sure you want to delete &quot;{category.name}

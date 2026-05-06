@@ -22,7 +22,7 @@ export default function EventsPage() {
 
         {/* Content - Padding ridotto su mobile */}
         <div className="flex-1 overflow-auto p-4 sm:p-6 min-h-0">
-          <Card className="glass bg-card border-border h-full flex flex-col">
+          <Card className="glass-panel border-border h-full flex flex-col">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl">
                 <Calendar className="w-5 h-5" />
@@ -39,7 +39,7 @@ export default function EventsPage() {
                   Events will be displayed when the backend has the <code className="text-primary bg-primary/10 px-1 rounded">/api/events</code> endpoint implemented
                 </p>
                 
-                <div className="mt-6 p-4 bg-secondary/50 rounded-lg text-left text-xs sm:text-sm text-foreground border border-border">
+                <div className="mt-6 p-4 glass-tile rounded-lg text-left text-xs sm:text-sm text-foreground border border-border">
                   <p className="font-semibold mb-2">Waiting for:</p>
                   <ul className="list-disc list-inside space-y-1.5 opacity-90">
                     <li>Endpoint <span className="font-mono text-primary">GET /api/events</span> (to list events)</li>

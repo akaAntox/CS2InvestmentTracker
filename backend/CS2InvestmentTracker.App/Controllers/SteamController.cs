@@ -19,14 +19,18 @@ public class SteamController(SteamApi steamApi, PriceUpdateService priceUpdateSe
 
     [HttpPost]
     [SwaggerOperation(Summary = "Update prices for all items")]
-    public async Task<ActionResult> UpdatePrices()
+    public async Task<IActionResult> UpdatePrices()
     {
         try
         {
             // Fetch all items and update their prices
             logger.LogInformation("Updating prices");
             var items = await itemRepository.GetAllAsync();
-            await priceUpdateService.UpdateAllPricesAsync(items.AsQueryable());
+            if (!priceUpdateService.TryStartUpdate(items.ToList()))
+            {
+                logger.LogWarning("Price update already in progress");
+                return Conflict("Price update already in progress");
+            }
         }
         catch (ItemNotFoundException ex)
         {
@@ -44,7 +48,7 @@ public class SteamController(SteamApi steamApi, PriceUpdateService priceUpdateSe
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
 
-        return Ok();
+        return Accepted("Price update started in background");
     }
 
     [HttpPost("{itemId}")]

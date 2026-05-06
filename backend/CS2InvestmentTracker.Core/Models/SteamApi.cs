@@ -1,4 +1,4 @@
-﻿using CS2InvestmentTracker.Core.Exceptions;
+using CS2InvestmentTracker.Core.Exceptions;
 using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.Extensions.DependencyInjection;
@@ -98,8 +98,8 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
         item.AvgSellPrice = apiResponse.MedianPrice;
         item.SellVolume = apiResponse.Volume;
 
-        var provider = serviceScopeFactory.CreateScope().ServiceProvider;
-        var itemRepository = provider.GetRequiredService<ItemRepository>();
+        using var scope = serviceScopeFactory.CreateScope();
+        var itemRepository = scope.ServiceProvider.GetRequiredService<ItemRepository>();
         await (createItemInDb ? itemRepository.AddAsync(item) : itemRepository.UpdateAsync(item));
     }
 

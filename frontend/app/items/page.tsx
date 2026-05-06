@@ -4,16 +4,15 @@ import { useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { ItemsTable } from "@/components/items/items-table"
 import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
 import { useApi } from "@/hooks/use-api"
-import { useToast } from "@/hooks/use-toast"
-import { itemsApi, categoriesApi, steamApi } from "@/lib/api-client"
+import { itemsApi, categoriesApi } from "@/lib/api-client"
+import { usePriceUpdate } from "@/hooks/use-price-update"
 import { Loader2, Plus, RefreshCcw } from "lucide-react"
 import { ItemDialog } from "@/components/items/item-dialog"
 import "@/styles/glass.css"
 
 export default function ItemsPage() {
-  const { toast } = useToast()
-  const [isUpdating, setIsUpdating] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -29,6 +28,9 @@ export default function ItemsPage() {
       cats.toSorted((a, b) => a.name.localeCompare(b.name))
     )
   )
+
+  const { isUpdating, updateProgress, processedCount, totalCount, handleUpdatePrices } =
+    usePriceUpdate({ onCompleted: mutateItems })
 
   const handleEdit = (item: any) => {
     setSelectedItem(item)
@@ -52,25 +54,6 @@ export default function ItemsPage() {
     // reload list and close dialog
     await mutateItems()
     handleClose()
-  }
-
-  const handleUpdatePrices = async () => {
-    setIsUpdating(true)
-    try {
-      await steamApi.updateAll()
-      toast({
-        title: "Successo",
-        description: "Prezzi Steam aggiornati con successo",
-      })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Error during price update",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdating(false)
-    }
   }
 
   return (
@@ -106,6 +89,29 @@ export default function ItemsPage() {
               </Button>
             </div>
           </div>
+
+          {/* Progress banner — mirrors the dashboard; shown while background update is running */}
+          {isUpdating && (
+            <div className="mt-4 rounded-lg border border-border glass-panel p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  Updating Steam prices…
+                </p>
+                {totalCount != null && (
+                  <p className="text-xs text-muted-foreground">
+                    {processedCount ?? 0}/{totalCount} items
+                  </p>
+                )}
+              </div>
+              <Progress value={updateProgress} className="h-2 [&>div]:bg-emerald-500" />
+              {totalCount != null && (
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Processed: {processedCount ?? 0}</span>
+                  <span>Remaining: {totalCount - (processedCount ?? 0)}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Content area: fills remaining height, no external scroll */}

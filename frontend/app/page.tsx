@@ -1,16 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { KpiCard } from "@/components/kpi-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { useApi } from "@/hooks/use-api"
-import { itemsApi, categoriesApi, steamApi } from "@/lib/api-client"
-import { useToast } from "@/hooks/use-toast"
+import { itemsApi, categoriesApi } from "@/lib/api-client"
+import { usePriceUpdate } from "@/hooks/use-price-update"
 import { formatCurrency, formatPercentage } from "@/lib/format-utils"
-import * as signalR from "@microsoft/signalr"
 import {
   Package,
   Tag,
@@ -35,18 +33,13 @@ interface Item {
 }
 
 export default function Home() {
-  const { toast } = useToast()
-  const [isUpdating, setIsUpdating] = useState(false)
-
-  // stato per progress & ETA
-  const [updateProgress, setUpdateProgress] = useState(0) // 0–100
-  const [processedCount, setProcessedCount] = useState<number | null>(null)
-  const [totalCount, setTotalCount] = useState<number | null>(null)
-
   const { data: items = [], isLoading: itemsLoading, mutate: mutateItems } = 
     useApi("items", () => itemsApi.getAll())
   const { data: categories = [], isLoading: categoriesLoading } = 
     useApi("categories", () => categoriesApi.getAll())
+
+  const { isUpdating, updateProgress, processedCount, totalCount, handleUpdatePrices } =
+    usePriceUpdate({ onCompleted: mutateItems })
 
   const numberItems = items?.length || 0
   const numberCategories = categories?.length || 0
@@ -95,77 +88,6 @@ export default function Home() {
       : totalNetProfit < 0
       ? "not-stonks"
       : "stonks" // default to "stonks" if neutral
-  
-  const getApiBaseUrl = () => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api"
-  }
-
-  // effetto che anima la progress bar mentre isUpdating è true
-  useEffect(() => {
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${getApiBaseUrl()}/hubs/priceUpdate`)
-      .withAutomaticReconnect()
-      .build()
-
-    connection.on("PriceUpdateProgress", (payload: { processed: number; total: number }) => {
-      setProcessedCount(payload.processed)
-      setTotalCount(payload.total)
-
-      const pct = payload.total > 0 ? (payload.processed / payload.total) * 100 : 0
-      setUpdateProgress(pct)
-    })
-
-    connection.on("PriceUpdateCompleted", (payload: { total: number }) => {
-      setUpdateProgress(100)
-      setIsUpdating(false)
-      mutateItems()
-
-      toast({
-        title: "Update completed",
-        description: `Steam prices updated for ${payload.total} items.`,
-      })
-
-      // reset progress bar after short delay
-      setTimeout(() => {
-        setUpdateProgress(0)
-        setProcessedCount(null)
-        setTotalCount(null)
-      }, 1500)
-    })
-
-    connection
-      .start()
-      .catch(err => console.error("SignalR connection error:", err))
-
-    return () => {
-      connection.stop()
-    }
-  }, [mutateItems])
-
-  const handleUpdatePrices = async () => {
-    if (isUpdating) return
-
-    setIsUpdating(true)
-    setUpdateProgress(0)
-    setProcessedCount(null)
-    setTotalCount(null)
-
-    try {
-      toast({
-        title: "Update started",
-        description: "Steam prices are being updated. Progress will appear at the top.",
-      })
-
-      await steamApi.updateAll()
-    } catch (error) {
-      setIsUpdating(false)
-      toast({
-        title: "Error",
-        description: "Error starting price update.",
-        variant: "destructive",
-      })
-    }
-  }
 
   return (
     <DashboardLayout variant={layoutVariant}>

@@ -19,7 +19,6 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 builder.Services.AddScoped<ItemRepository>();
 builder.Services.AddScoped<CategoryRepository>();
 builder.Services.AddScoped<EventLogRepository>();
-builder.Services.AddScoped<PriceUpdateService>();
 
 // Add identity, razor pages and controllers. 
 builder.Services
@@ -52,6 +51,7 @@ builder.Services.AddHttpClient(nameof(SteamApi), client =>
     client.Timeout = TimeSpan.FromSeconds(15);
 });
 builder.Services.AddSingleton<SteamApi>();
+builder.Services.AddSingleton<PriceUpdateService>();
 
 // Add CORS policy to allow all origins, methods, and headers.
 const string FrontendCorsPolicy = "FrontendCorsPolicy";

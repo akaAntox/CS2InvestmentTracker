@@ -561,7 +561,7 @@ export function ItemsTable({
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              <AlertDialogContent className="glass-dialog">
                                 <AlertDialogTitle>Delete Item</AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Are you sure you want to delete "{item.name}"? This action cannot be undone.

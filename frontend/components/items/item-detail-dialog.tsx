@@ -120,7 +120,7 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
             
             {/* COLONNA SINISTRA: Immagine e Date */}
             <section className="flex flex-col gap-4">
-              <div className="w-full rounded-lg border bg-card/50 overflow-hidden shadow-sm">
+              <div className="w-full rounded-lg glass-tile overflow-hidden shadow-sm">
                 <div className="relative w-full aspect-[4/3] md:aspect-square lg:aspect-[4/3]">
                   {imgLoading ? (
                     <div className="p-4 w-full h-full flex flex-col">
@@ -149,7 +149,7 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
               </div>
 
               {(safeItem?.createdAt || safeItem?.updatedAt || safeItem?.insertDate || safeItem?.editDate) && (
-                <div className="rounded-lg bg-secondary/20 p-3 text-xs text-muted-foreground space-y-1">
+                <div className="rounded-lg glass-tile p-3 text-xs text-muted-foreground space-y-1">
                   {safeItem?.createdAt && <div className="flex justify-between"><span>Created:</span> <span className="font-mono">{formatDate(safeItem.createdAt as any)}</span></div>}
                   {safeItem?.insertDate && <div className="flex justify-between"><span>Inserted:</span> <span className="font-mono">{formatDate(safeItem.insertDate as any)}</span></div>}
                   {safeItem?.updatedAt && <div className="flex justify-between"><span>Updated:</span> <span className="font-mono">{formatDate(safeItem.updatedAt as any)}</span></div>}
@@ -166,7 +166,7 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
                 <h3 className="font-semibold text-foreground/90 flex items-center gap-2">
                   Description
                 </h3>
-                <div className="rounded-lg border bg-card/30 p-3 text-sm text-foreground/80 break-words whitespace-pre-wrap max-h-40 overflow-y-auto">
+                <div className="rounded-lg glass-tile p-3 text-sm text-foreground/80 break-words whitespace-pre-wrap max-h-40 overflow-y-auto">
                   {loading ? (
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-full" />
@@ -225,7 +225,7 @@ function Stat({ label, value, highlight = "neutral" }: Readonly<{ label: string;
     "text-foreground";
 
   return (
-    <div className="rounded-md border bg-card/40 p-3 min-w-0 flex flex-col justify-between">
+    <div className="rounded-md glass-tile p-3 min-w-0 flex flex-col justify-between">
       <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
       <div className={cn("mt-1 font-medium truncate text-sm sm:text-base", colorClass)} title={String(value)}>
         {value}
