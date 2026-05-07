@@ -15,6 +15,10 @@ export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
 
   const { data: categories = [], isLoading, mutate } = useApi("categories", () => categoriesApi.getAll())
+  const { data: summaries = [], isLoading: summariesLoading, mutate: mutateSummaries } = useApi(
+    "categories-summary",
+    () => categoriesApi.getSummary()
+  )
 
   const handleEdit = (category: any) => {
     setSelectedCategory(category)
@@ -28,7 +32,13 @@ export default function CategoriesPage() {
 
   const handleSubmit = () => {
     mutate()
+    mutateSummaries()
     handleDialogClose()
+  }
+
+  const handleDelete = () => {
+    mutate()
+    mutateSummaries()
   }
 
   return (
@@ -58,9 +68,10 @@ export default function CategoriesPage() {
         <div className="flex-1 min-h-0 p-6">
           <CategoriesTable
             categories={categories}
-            isLoading={isLoading}
+            summaries={summaries}
+            isLoading={isLoading || summariesLoading}
             onEdit={handleEdit}
-            onDelete={() => mutate()}
+            onDelete={handleDelete}
           />
         </div>
 

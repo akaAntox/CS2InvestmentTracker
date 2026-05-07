@@ -147,6 +147,7 @@ export const itemsApi = {
 export const categoriesApi = {
   getAll: () => apiRequest<any[]>("/api/categories"),
   getById: (id: string) => apiRequest<any>(`/api/categories/${id}`),
+  getSummary: () => apiRequest<any[]>("/api/categories/summary"),
   create: (data: any) => apiRequest<any>("/api/categories", { method: "POST", body: data }),
   update: (data: any) => apiRequest<any>(`/api/categories`, { method: "PUT", body: data }),
   delete: (id: string) => apiRequest<void>(`/api/categories/${id}`, { method: "DELETE" }),
@@ -157,4 +158,9 @@ export const steamApi = {
   updateAll: () => apiRequest<void>("/api/steam", { method: "POST" }),
   updateById: (id: string) => apiRequest<void>(`/api/steam/${id}`, { method: "POST" }),
   getImage: (id: string) => apiRequest<any>(`/api/steam/${id}/image-url`),
+}
+
+// Events API
+export const eventsApi = {
+  getAll: () => apiRequest<any[]>("/api/events"),
 }

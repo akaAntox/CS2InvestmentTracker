@@ -35,6 +35,20 @@ export interface CategoryCreate {
 
 export interface CategoryUpdate extends CategoryCreate {}
 
+export interface CategorySummary {
+  id: number
+  name: string
+  description: string
+  itemCount: number
+  totalQuantity: number
+  totalBuyPrice: number
+  totalMinSellPrice: number | null
+  totalNetProfit: number | null
+  averagePercentProfit: number | null
+  bestItem: string | null
+  worstItem: string | null
+}
+
 // Steam market buyPrice types
 export interface SteamMarketPrice {
   id: string
@@ -50,15 +64,20 @@ export interface SteamPriceUpdate {
 }
 
 // Event log types
+// ActionType enum from backend: Insert=0, Update=1, Delete=2
+export enum ActionType {
+  Insert = 0,
+  Update = 1,
+  Delete = 2,
+}
+
 export interface EventLog {
-  id: string
-  itemId?: string
-  categoryId?: string
-  action: "CREATE" | "UPDATE" | "DELETE" | "PRICE_UPDATE"
-  description: string
-  oldValue?: string
-  newValue?: string
-  insertDate: string
+  id: number
+  date: string
+  action: ActionType
+  message: string
+  oldValues?: string | null
+  newValues?: string | null
 }
 
 // API Response types

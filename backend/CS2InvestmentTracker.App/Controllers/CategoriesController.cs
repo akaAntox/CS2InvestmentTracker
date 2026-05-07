@@ -1,4 +1,4 @@
-﻿using CS2InvestmentTracker.Core.Models.Database;
+using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Models.DTOs;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using CS2InvestmentTracker.Core.Validators.DTOs;
@@ -147,6 +147,23 @@ public class CategoriesController(ILogger<CategoriesController> logger, Category
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Error while getting all categories: {Exception}", ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    [HttpGet("summary")]
+    [SwaggerOperation(Summary = "Get all categories with aggregated item statistics")]
+    public async Task<ActionResult<IEnumerable<CategorySummaryDto>>> GetCategoriesSummary()
+    {
+        try
+        {
+            logger.LogInformation("Getting categories summary with item statistics");
+            var summaries = await categoryRepository.GetCategoriesWithSummaryAsync();
+            return Ok(summaries);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Error while getting categories summary: {Exception}", ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
