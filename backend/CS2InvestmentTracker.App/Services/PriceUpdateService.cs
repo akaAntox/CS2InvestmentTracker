@@ -1,4 +1,4 @@
-﻿using CS2InvestmentTracker.App.Controllers;
+using CS2InvestmentTracker.App.Controllers;
 using CS2InvestmentTracker.App.Hubs;
 using CS2InvestmentTracker.Core.Exceptions;
 using CS2InvestmentTracker.Core.Models;
@@ -72,6 +72,11 @@ public class PriceUpdateService(
             catch (ApiResponseException ex)
             {
                 logger.LogError(ex, "Error reading API response: {Message}", ex.Message);
+            }
+            catch (ItemNotFoundException ex)
+            {
+                logger.LogWarning("No price data available for item {ItemName}: {Message}",
+                                  item.Name, ex.Message);
             }
             catch (Exception ex)
             {

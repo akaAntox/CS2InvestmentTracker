@@ -23,8 +23,8 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
 
     // === RATE LIMITING ===
     // Valore conservativo: ~ 1 richiesta / secondo
-    // Puoi abbassare o alzare questo valore se vedi che è troppo lento o ancora dà 429
-    private static readonly TimeSpan MinDelayBetweenRequests = TimeSpan.FromMilliseconds(3000);
+    // Aumentato a 4500ms per evitare i blocchi severi di Steam durante gli update massivi
+    private static readonly TimeSpan MinDelayBetweenRequests = TimeSpan.FromMilliseconds(4500);
 
     private readonly SemaphoreSlim rateLimiter = new(1, 1);
     private DateTime lastRequestUtc = DateTime.MinValue;
@@ -73,7 +73,8 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
         // Gestione esplicita del 429
         if (response.StatusCode == (HttpStatusCode)429)
         {
-            var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(5);
+            // Steam spesso non manda un header Retry-After, e i suoi blocchi durano 1-2 minuti.
+            var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(60);
             logger.LogWarning("Steam returned 429 TooManyRequests for {ItemName}. Backing off for {RetryAfter} seconds",
                 item.Name, retryAfter.TotalSeconds);
 

@@ -1,4 +1,4 @@
-﻿using CS2InvestmentTracker.App.Services;
+using CS2InvestmentTracker.App.Services;
 using CS2InvestmentTracker.Core.Exceptions;
 using CS2InvestmentTracker.Core.Models;
 using CS2InvestmentTracker.Core.Models.Database;
@@ -73,9 +73,19 @@ public class SteamController(SteamApi steamApi, PriceUpdateService priceUpdateSe
             await steamApi.UpdateItemPriceAsync(item);
             return Ok(item);
         }
+        catch (ItemNotFoundException ex)
+        {
+            logger.LogWarning("Item not found while updating price for item {Id}: {Exception}", itemId, ex.Message);
+            return StatusCode(StatusCodes.Status502BadGateway, $"Item does not exist on Steam Market");
+        }
+        catch (ApiResponseException ex)
+        {
+            logger.LogWarning(ex, "API response error while updating price for item {Id}: {Exception}", itemId, ex.Message);
+            return StatusCode(StatusCodes.Status502BadGateway, "Error from external API");
+        }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Error while updating price for item {Id}: {Exception}", itemId, ex.Message);
+            logger.LogError(ex, "Error while updating price for item {Id}: {Exception}", itemId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
