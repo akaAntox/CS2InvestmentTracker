@@ -29,6 +29,18 @@ public class ItemRepository : GenericRepository<Item>
             .ToListAsync();
     }
 
+    // Items with the same name share the market price: update only the price columns of all of them.
+    // A null price keeps the value already stored.
+    public Task<int> UpdatePricesByNameAsync(string name, decimal? minSellPrice, decimal? avgSellPrice, int? sellVolume)
+    {
+        return context.Items
+            .Where(i => i.Name == name)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(i => i.MinSellPrice, i => minSellPrice ?? i.MinSellPrice)
+                .SetProperty(i => i.AvgSellPrice, i => avgSellPrice ?? i.AvgSellPrice)
+                .SetProperty(i => i.SellVolume, sellVolume));
+    }
+
     // Check for duplicate item names and buyprice
     public async Task<bool> CheckDuplicates(string name, decimal buyPrice)
     {

@@ -75,6 +75,7 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
         {
             // Steam spesso non manda un header Retry-After, e i suoi blocchi durano 1-2 minuti.
             var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(60);
+            response.Dispose();
             logger.LogWarning("Steam returned 429 TooManyRequests for {ItemName}. Backing off for {RetryAfter} seconds",
                 item.Name, retryAfter.TotalSeconds);
 
@@ -92,16 +93,21 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
 
         if (apiResponse == null || !apiResponse.Success)
             throw new ApiResponseException($"Invalid API response");
-        if (apiResponse.LowestPrice == 0 && apiResponse.MedianPrice == 0 && apiResponse.Volume == 0)
+        if (apiResponse.LowestPrice is null && apiResponse.MedianPrice is null && apiResponse.Volume == 0)
             throw new ItemNotFoundException($"No price data available for item '{item.Name}'");
 
-        item.MinSellPrice = apiResponse.LowestPrice;
-        item.AvgSellPrice = apiResponse.MedianPrice;
+        // Missing prices keep the last known value
+        item.MinSellPrice = apiResponse.LowestPrice ?? item.MinSellPrice;
+        item.AvgSellPrice = apiResponse.MedianPrice ?? item.AvgSellPrice;
         item.SellVolume = apiResponse.Volume;
 
         using var scope = serviceScopeFactory.CreateScope();
         var itemRepository = scope.ServiceProvider.GetRequiredService<ItemRepository>();
-        await (createItemInDb ? itemRepository.AddAsync(item) : itemRepository.UpdateAsync(item));
+        if (createItemInDb)
+            await itemRepository.AddAsync(item);
+        else
+            // Only price columns: never overwrite edits made while a batch update is running
+            await itemRepository.UpdatePricesByNameAsync(item.Name, apiResponse.LowestPrice, apiResponse.MedianPrice, apiResponse.Volume);
     }
 
     /// <summary>

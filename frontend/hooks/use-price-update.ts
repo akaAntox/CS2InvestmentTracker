@@ -2,13 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import * as signalR from "@microsoft/signalr"
-import { steamApi } from "@/lib/api-client"
+import { steamApi, getApiBaseUrl } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
 
-const getHubUrl = () => {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api"
-  return `${base}/hubs/priceUpdate`
-}
+const getHubUrl = () => `${getApiBaseUrl()}/hubs/priceUpdate`
 
 interface UsePriceUpdateOptions {
   /** Called after the backend signals that the batch update has finished. */
@@ -54,14 +51,18 @@ export function usePriceUpdate({ onCompleted }: UsePriceUpdateOptions = {}): Pri
       setUpdateProgress(pct)
     })
 
-    connection.on("PriceUpdateCompleted", (payload: { total: number }) => {
+    connection.on("PriceUpdateCompleted", (payload: { total: number; failed?: number }) => {
       setUpdateProgress(100)
       setIsUpdating(false)
       onCompletedRef.current?.()
 
+      const failed = payload.failed ?? 0
       toast({
-        title: "Update completed",
-        description: `Steam prices updated for ${payload.total} items.`,
+        title: failed > 0 ? "Update completed with errors" : "Update completed",
+        description: failed > 0
+          ? `Steam prices updated for ${payload.total - failed}/${payload.total} items. ${failed} failed, check the backend log.`
+          : `Steam prices updated for ${payload.total} items.`,
+        variant: failed > 0 ? "destructive" : undefined,
       })
 
       // Reset progress bar after a short visual delay

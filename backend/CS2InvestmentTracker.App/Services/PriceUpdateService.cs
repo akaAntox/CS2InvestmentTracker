@@ -6,7 +6,6 @@ using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using System.Text.Json;
 
 namespace CS2InvestmentTracker.App.Services;
 
@@ -48,58 +47,93 @@ public class PriceUpdateService(
         return true;
     }
 
+    // ponytail: fixed passes and cooldown; switch to adaptive backoff if Steam blocks last longer
+    private const int MaxPasses = 3;
+    private static readonly TimeSpan RetryCooldown = TimeSpan.FromMinutes(2);
+
     private async Task ProcessUpdatesAsync(List<Item> items, CancellationToken ct = default)
     {
         logger.LogInformation("Starting background price update...");
 
-        foreach (var item in items)
+        // Items with the same name share the market price: one request per name
+        var pending = items.GroupBy(i => i.Name).ToList();
+        var failedNames = new List<string>();
+        var failedCount = 0;
+
+        for (var pass = 1; pass <= MaxPasses && pending.Count > 0; pass++)
         {
-            ct.ThrowIfCancellationRequested();
-            try
+            if (pass > 1)
             {
-                using var scope = serviceScopeFactory.CreateScope();
-                var steamApi = scope.ServiceProvider.GetRequiredService<SteamApi>();
-                await steamApi.UpdateItemPriceAsync(item);
-            }
-            catch (HttpRequestException ex)
-            {
-                logger.LogError(ex, "Invalid HTTP request: {Message}", ex.Message);
-            }
-            catch (JsonException ex)
-            {
-                logger.LogError(ex, "Error deserializing JSON response: {Message}", ex.Message);
-            }
-            catch (ApiResponseException ex)
-            {
-                logger.LogError(ex, "Error reading API response: {Message}", ex.Message);
-            }
-            catch (ItemNotFoundException ex)
-            {
-                logger.LogWarning("No price data available for item {ItemName}: {Message}",
-                                  item.Name, ex.Message);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error updating prices for item {ItemName}: {Message}",
-                                item.Name, ex.Message);
+                logger.LogWarning("Retrying {Count} failed items in {Cooldown} (pass {Pass}/{MaxPasses})",
+                                  pending.Count, RetryCooldown, pass, MaxPasses);
+                await Task.Delay(RetryCooldown, ct);
             }
 
-            lock (_lock) { _processedCount++; }
-            // send progress update via SignalR
-            await hubContext.Clients.All.SendAsync("PriceUpdateProgress",
-                new
+            var retry = new List<IGrouping<string, Item>>();
+            foreach (var group in pending)
+            {
+                ct.ThrowIfCancellationRequested();
+                var error = await TryUpdateAsync(group.First());
+
+                // Transient errors (429, timeouts, 5xx, network) are retried in the next pass
+                if (error is not null && error is not ItemNotFoundException && pass < MaxPasses)
                 {
-                    processed = _processedCount,
-                    total = _totalCount
-                },
-                cancellationToken: ct
-            );
+                    retry.Add(group);
+                    continue;
+                }
+
+                if (error is not null)
+                {
+                    failedNames.Add(group.Key);
+                    failedCount += group.Count();
+                }
+
+                lock (_lock) { _processedCount += group.Count(); }
+                // send progress update via SignalR
+                await hubContext.Clients.All.SendAsync("PriceUpdateProgress",
+                    new
+                    {
+                        processed = _processedCount,
+                        total = _totalCount
+                    },
+                    cancellationToken: ct
+                );
+            }
+            pending = retry;
         }
+
         // send completion message via SignalR
         await hubContext.Clients.All.SendAsync("PriceUpdateCompleted",
-            new { total = _totalCount },
+            new { total = _totalCount, failed = failedCount },
             cancellationToken: ct
         );
-        logger.LogInformation("Price update completed");
+
+        if (failedCount > 0)
+            logger.LogWarning("Price update completed, {Failed} items not updated: {Names}",
+                              failedCount, string.Join(", ", failedNames));
+        else
+            logger.LogInformation("Price update completed");
+    }
+
+    // Returns null on success, otherwise the error that stopped the update
+    private async Task<Exception?> TryUpdateAsync(Item item)
+    {
+        try
+        {
+            using var scope = serviceScopeFactory.CreateScope();
+            var steamApi = scope.ServiceProvider.GetRequiredService<SteamApi>();
+            await steamApi.UpdateItemPriceAsync(item);
+            return null;
+        }
+        catch (ItemNotFoundException ex)
+        {
+            logger.LogWarning("No price data available for item {ItemName}: {Message}", item.Name, ex.Message);
+            return ex;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error updating prices for item {ItemName}: {Message}", item.Name, ex.Message);
+            return ex;
+        }
     }
 }

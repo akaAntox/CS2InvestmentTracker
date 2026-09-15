@@ -11,7 +11,8 @@ public class SteamApiResponse
 
     [JsonPropertyName("lowest_price")]
     public string? LowestPriceString { get; set; }
-    public decimal LowestPrice => ParsePrice(LowestPriceString);
+    // null when Steam omits the field (no listings / no recent sales)
+    public decimal? LowestPrice => ParsePrice(LowestPriceString);
 
     [JsonPropertyName("volume")]
     public string? VolumeString { get; set; }
@@ -19,20 +20,20 @@ public class SteamApiResponse
 
     [JsonPropertyName("median_price")]
     public string? MedianPriceString { get; set; }
-    public decimal MedianPrice => ParsePrice(MedianPriceString);
+    public decimal? MedianPrice => ParsePrice(MedianPriceString);
 
 
-    private static decimal ParsePrice(string? raw)
+    private static decimal? ParsePrice(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
-            return 0m;
+            return null;
 
         // Example raw: "1,60€", "€ 1,60", "1.600,25€", etc.
         // 1) Keep only digits, comma and dot
         var numeric = Regex.Replace(raw, @"[^\d,\.]", "");
 
         if (string.IsNullOrWhiteSpace(numeric))
-            return 0m;
+            return null;
 
         //    "1.600,25" -> "1600,25" -> "1600.25"
         numeric = numeric.Replace(".", "");   // remove thousands separator
@@ -48,7 +49,7 @@ public class SteamApiResponse
             return value;
         }
 
-        return 0m;
+        return null;
     }
 
     private static int ParseVolume(string? raw)
