@@ -28,15 +28,24 @@ interface ItemDialogProps {
   onSubmit: () => void
 }
 
+const toForm = (item: any | null | undefined, categories: Array<{ id: string; name: string }>) => ({
+  name: item?.name ?? "",
+  description: item?.description ?? "",
+  categoryId: item?.categoryId ?? (categories?.[0]?.id ?? ""),
+  quantity: item?.quantity == null ? "" : String(item.quantity),
+  buyPrice: item?.buyPrice == null ? "" : String(item.buyPrice),
+  alertAbovePrice: item?.alertAbovePrice == null ? "" : String(item.alertAbovePrice),
+  alertBelowPrice: item?.alertBelowPrice == null ? "" : String(item.alertBelowPrice),
+  sellPrice: item?.sellPrice == null ? "" : String(item.sellPrice),
+  sellDate: item?.sellDate ? String(item.sellDate).slice(0, 10) : "",
+})
+
+// "" -> null; accepts point or comma
+const toNumber = (value: string) => (value.trim() === "" ? null : Number.parseFloat(value.replace(",", ".")))
+
 export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: Readonly<ItemDialogProps>) {
-  const [formData, setFormData] = useState({
-    name: item?.name ?? "",
-    description: item?.description ?? "",
-    categoryId: item?.categoryId ?? (categories?.[0]?.id ?? ""),
-    quantity: item?.quantity == null ? "" : String(item.quantity),
-    buyPrice: item?.buyPrice == null ? "" : String(item.buyPrice),
-  })
-  
+  const [formData, setFormData] = useState(() => toForm(item, categories))
+
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
@@ -44,13 +53,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
   useEffect(() => {
     if (!open) return
 
-    setFormData({
-      name: item?.name ?? "",
-      description: item?.description ?? "",
-      categoryId: item?.categoryId ?? (categories?.[0]?.id ?? ""),
-      quantity: item?.quantity == null ? "" : String(item.quantity),
-      buyPrice: item?.buyPrice == null ? "" : String(item.buyPrice),
-    })
+    setFormData(toForm(item, categories))
     setErrors({})
   }, [item, open, categories])
 
@@ -72,6 +75,19 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
       if (Number.isNaN(price) || price < 0) {
         clientErrors["buyPrice"] = ["Buy price must be a positive number"]
       }
+    }
+
+    // Alerts (optional)
+    for (const key of ["alertAbovePrice", "alertBelowPrice"] as const) {
+      const value = toNumber(formData[key])
+      if (value !== null && !(value > 0)) clientErrors[key] = ["Alert price must be greater than 0"]
+    }
+
+    // Sale (sold items only)
+    const sellPrice = toNumber(formData.sellPrice)
+    if (sellPrice !== null && !(sellPrice >= 0)) clientErrors["sellPrice"] = ["Sell price must be a positive number"]
+    if ((formData.sellPrice === "") !== (formData.sellDate === "")) {
+      clientErrors["sellDate"] = ["Fill both sell price and date, or clear both to mark the item as not sold"]
     }
 
     return clientErrors
@@ -100,10 +116,17 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
         categoryId: formData.categoryId,
         quantity,
         buyPrice: price,
+        alertAbovePrice: toNumber(formData.alertAbovePrice),
+        alertBelowPrice: toNumber(formData.alertBelowPrice),
       }
 
       if (item) {
-        await itemsApi.update({ id: item.id, ...payload })
+        await itemsApi.update({
+          id: item.id,
+          ...payload,
+          sellPrice: toNumber(formData.sellPrice),
+          sellDate: formData.sellDate || null,
+        })
         toast({ title: "Success", description: "Item updated" })
       } else {
         await itemsApi.create(payload)
@@ -112,13 +135,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
 
       onSubmit()
       onOpenChange(false)
-      setFormData({
-        name: "",
-        description: "",
-        categoryId: categories?.[0]?.id ?? "",
-        quantity: "",
-        buyPrice: "",
-      })
+      setFormData(toForm(null, categories))
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.errors) {
@@ -140,8 +157,8 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* MODIFICA 1: max-h-[90vh] e overflow-y-auto 
-        Assicura che la modale sia scrollabile su schermi piccoli o quando compare la tastiera 
+      {/* MODIFICA 1: max-h-[90vh] e overflow-y-auto
+        Assicura che la modale sia scrollabile su schermi piccoli o quando compare la tastiera
       */}
       <DialogContent className="glass-dialog w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -151,7 +168,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
           </DialogDescription>
         </DialogHeader>
 
-        {/* MODIFICA 2: space-y-4 su mobile, space-y-6 su schermi più grandi 
+        {/* MODIFICA 2: space-y-4 su mobile, space-y-6 su schermi più grandi
           Compatta il form su mobile per risparmiare spazio verticale
         */}
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
@@ -272,6 +289,57 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
             </div>
           </div>
 
+          {/* Sezione: Alert di prezzo */}
+          <div className="space-y-2">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <PriceInput
+                id="item-alertAbovePrice"
+                label="Alert when price ≥"
+                value={formData.alertAbovePrice}
+                onChange={(value) => setFormData((s) => ({ ...s, alertAbovePrice: value }))}
+                error={errors.alertAbovePrice?.[0]}
+              />
+              <PriceInput
+                id="item-alertBelowPrice"
+                label="Alert when price ≤"
+                value={formData.alertBelowPrice}
+                onChange={(value) => setFormData((s) => ({ ...s, alertBelowPrice: value }))}
+                error={errors.alertBelowPrice?.[0]}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Optional. Checked against the Steam min sell price after each full price update; an alert fires once, then it is cleared.
+            </p>
+          </div>
+
+          {/* Sezione: Vendita (solo item venduti) */}
+          {item?.sellDate && (
+            <div className="space-y-2">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <PriceInput
+                  id="item-sellPrice"
+                  label="Received per unit"
+                  value={formData.sellPrice}
+                  onChange={(value) => setFormData((s) => ({ ...s, sellPrice: value }))}
+                  error={errors.sellPrice?.[0]}
+                />
+                <div>
+                  <Label htmlFor="item-sellDate">Sell date</Label>
+                  <Input
+                    id="item-sellDate"
+                    type="date"
+                    value={formData.sellDate}
+                    onChange={(e) => setFormData((s) => ({ ...s, sellDate: e.target.value }))}
+                    className="mt-2 glass-tile"
+                    aria-invalid={!!errors.sellDate}
+                  />
+                  {errors.sellDate && <p className="mt-1 text-xs text-destructive">{errors.sellDate[0]}</p>}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Clear both fields to mark the item as not sold.</p>
+            </div>
+          )}
+
           {/* Sezione: Descrizione */}
           <div className="space-y-2">
             <Label htmlFor="item-description">Notes</Label>
@@ -303,5 +371,33 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSubmit }: R
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function PriceInput({
+  id,
+  label,
+  value,
+  onChange,
+  error,
+}: Readonly<{ id: string; label: string; value: string; onChange: (value: string) => void; error?: string }>) {
+  return (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      <div className="mt-2 flex items-center gap-2">
+        <span className="glass-tile inline-flex shrink-0 items-center justify-center rounded-md border border-input px-3 h-10 text-sm">€</span>
+        <Input
+          id={id}
+          type="text"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="0.00"
+          className="glass-tile flex-1"
+          aria-invalid={!!error}
+        />
+      </div>
+      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+    </div>
   )
 }

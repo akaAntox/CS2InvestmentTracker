@@ -52,7 +52,7 @@ jobs:
           TESTS=$(find . -name "*Tests.csproj" | wc -l)
           if [ "$TESTS" -gt "0" ]; then
             for proj in $(find . -name "*Tests.csproj"); do
-              dotnet test "$proj" -c Release --no-build \
+              dotnet test "$proj" -c Release \
                 --logger "trx;LogFileName=${proj##*/}.trx" \
                 --collect:"XPlat Code Coverage" \
                 /p:CollectCoverage=true \

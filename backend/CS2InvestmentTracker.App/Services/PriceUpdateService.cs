@@ -1,10 +1,8 @@
-using CS2InvestmentTracker.App.Controllers;
 using CS2InvestmentTracker.App.Hubs;
 using CS2InvestmentTracker.Core.Exceptions;
 using CS2InvestmentTracker.Core.Models;
 using CS2InvestmentTracker.Core.Models.Database;
 using CS2InvestmentTracker.Core.Repositories.Custom;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
 namespace CS2InvestmentTracker.App.Services;
@@ -12,6 +10,7 @@ namespace CS2InvestmentTracker.App.Services;
 public class PriceUpdateService(
     IServiceScopeFactory serviceScopeFactory,
     IHubContext<PriceUpdateHub> hubContext,
+    PriceAlertService priceAlertService,
     ILogger<PriceUpdateService> logger)
 {
     private readonly object _lock = new();
@@ -38,7 +37,8 @@ public class PriceUpdateService(
         }
 
         // fire and forget
-        _ = Task.Run(async () => {
+        _ = Task.Run(async () =>
+        {
             try { await ProcessUpdatesAsync(itemsToUpdate); }
             catch (Exception ex) { logger.LogError(ex, "Unexpected error during price update: {Message}", ex.Message); }
             finally { lock (_lock) { _isUpdating = false; } }
@@ -102,6 +102,13 @@ public class PriceUpdateService(
             pending = retry;
         }
 
+        // No history or alerts when nothing got updated, so the daily job tries again later
+        if (failedCount < _totalCount)
+        {
+            await SaveSnapshotAsync();
+            await priceAlertService.CheckAsync();
+        }
+
         // send completion message via SignalR
         await hubContext.Clients.All.SendAsync("PriceUpdateCompleted",
             new { total = _totalCount, failed = failedCount },
@@ -113,6 +120,21 @@ public class PriceUpdateService(
                               failedCount, string.Join(", ", failedNames));
         else
             logger.LogInformation("Price update completed");
+    }
+
+    private async Task SaveSnapshotAsync()
+    {
+        try
+        {
+            using var scope = serviceScopeFactory.CreateScope();
+            var itemRepository = scope.ServiceProvider.GetRequiredService<ItemRepository>();
+            await itemRepository.SaveSnapshotAsync(DateOnly.FromDateTime(DateTime.Now));
+        }
+        catch (Exception ex)
+        {
+            // A failed history write must not block the completion message
+            logger.LogError(ex, "Error saving price snapshot: {Message}", ex.Message);
+        }
     }
 
     // Returns null on success, otherwise the error that stopped the update

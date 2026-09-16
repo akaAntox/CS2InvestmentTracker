@@ -64,11 +64,12 @@ export interface SteamPriceUpdate {
 }
 
 // Event log types
-// ActionType enum from backend: Insert=0, Update=1, Delete=2
+// ActionType enum from backend: Insert=0, Update=1, Delete=2, Alert=3
 export enum ActionType {
   Insert = 0,
   Update = 1,
   Delete = 2,
+  Alert = 3,
 }
 
 export interface EventLog {

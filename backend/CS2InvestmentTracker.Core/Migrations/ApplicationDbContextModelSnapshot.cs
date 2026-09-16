@@ -15,7 +15,7 @@ namespace CS2InvestmentTracker.Core.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.5");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.20");
 
             modelBuilder.Entity("CS2InvestmentTracker.Core.Models.Database.Category", b =>
                 {
@@ -74,6 +74,14 @@ namespace CS2InvestmentTracker.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<decimal?>("AlertAbovePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("AlertBelowPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal?>("AvgSellPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
@@ -111,10 +119,20 @@ namespace CS2InvestmentTracker.Core.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("PriceUpdateDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Quantity")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(1);
+
+                    b.Property<DateTime?>("SellDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("SellPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("SellVolume")
                         .HasColumnType("INTEGER");
@@ -124,6 +142,51 @@ namespace CS2InvestmentTracker.Core.Migrations
                     b.HasIndex("CategoryId");
 
                     b.ToTable("Items", (string)null);
+                });
+
+            modelBuilder.Entity("CS2InvestmentTracker.Core.Models.Database.PriceSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("AvgSellPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("BuyPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("MinSellPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SellVolume")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("ItemId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("PriceSnapshots", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

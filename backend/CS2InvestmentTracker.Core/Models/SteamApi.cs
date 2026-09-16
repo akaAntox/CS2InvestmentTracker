@@ -4,7 +4,6 @@ using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -100,6 +99,7 @@ public class SteamApi(IServiceScopeFactory serviceScopeFactory,
         item.MinSellPrice = apiResponse.LowestPrice ?? item.MinSellPrice;
         item.AvgSellPrice = apiResponse.MedianPrice ?? item.AvgSellPrice;
         item.SellVolume = apiResponse.Volume;
+        item.PriceUpdateDate = DateTime.Now;
 
         using var scope = serviceScopeFactory.CreateScope();
         var itemRepository = scope.ServiceProvider.GetRequiredService<ItemRepository>();

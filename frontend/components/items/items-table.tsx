@@ -25,8 +25,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrency, formatDate } from "@/lib/format-utils"
 import { itemsApi, ApiError, steamApi } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
-import { Edit, Trash2, RefreshCcw, ChevronUp, ChevronDown } from "lucide-react"
+import { Edit, Trash2, RefreshCcw, ChevronUp, ChevronDown, DollarSign } from "lucide-react"
 import { ItemDetailDialog } from "@/components/items/item-detail-dialog"
+import { SellItemDialog } from "@/components/items/sell-item-dialog"
 import "@/styles/glass.css"
 import { cn } from "@/lib/utils"
 
@@ -111,11 +112,20 @@ function formatSigned(n?: number | null, fractionDigits = 2) {
 type SortDir = "asc" | "desc" | null
 type SortKey =
   | "name" | "category" | "quantity" | "buy" | "totalPayed" | "steam" | "netProfit" | "totalNetProfit" | "percentNetProfit" | "lastUpdate"
+  | "change1d" | "change7d" | "change30d"
 
 function sortIcon(dir: SortDir) {
   if (dir === "asc") return <ChevronUp className="ml-1 h-4 w-4 inline-block" />
   if (dir === "desc") return <ChevronDown className="ml-1 h-4 w-4 inline-block" />
   return null
+}
+
+function ChangeCell({ value, className }: Readonly<{ value: number | null; className?: string }>) {
+  return (
+    <TableCell className={cn("text-right text-sm font-medium tabular-nums", className)} style={getPriceTextColor(value)}>
+      {value === null ? "--" : `${formatSigned(value, 2)}%`}
+    </TableCell>
+  )
 }
 
 export function ItemsTable({
@@ -132,6 +142,8 @@ export function ItemsTable({
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
   const [detailItem, setDetailItem] = useState<any | null>(null)
+  const [sellItem, setSellItem] = useState<any | null>(null)
+  const [status, setStatus] = useState<"held" | "sold" | "all">("held")
   const { toast } = useToast()
 
   // sorting state
@@ -172,9 +184,10 @@ export function ItemsTable({
     return (items || []).filter((item: any) => {
       const matchesSearch = (item.name ?? "").toLowerCase().includes(searchTerm.toLowerCase())
       const matchesCategory = selectedCategory === "all" || String(item.categoryId) === String(selectedCategory)
-      return matchesSearch && matchesCategory
+      const matchesStatus = status === "all" || (status === "sold") === (item.sellDate != null)
+      return matchesSearch && matchesCategory && matchesStatus
     })
-  }, [items, searchTerm, selectedCategory])
+  }, [items, searchTerm, selectedCategory, status])
 
   // sort accessors calcolati dalle stesse logiche delle celle
   const withComputed = useMemo(() => {
@@ -182,28 +195,36 @@ export function ItemsTable({
       const qty = Number(item.quantity ?? 0)
       const buy = Number(item.buyPrice ?? 0)
       const totalPayed = qty ? buy * qty : null
-      const steam = Number(item.minSellPrice ?? 0)
+      // Sold items show the sale (net received per unit) instead of the market price
+      const sold = item.sellDate != null
+      const steam = Number((sold ? item.sellPrice : item.minSellPrice) ?? 0)
       const currentValue = qty ? steam * qty : null
-      const netProfit =
-        typeof item.netProfit === "number"
+      const netProfit = sold
+        ? steam - buy
+        : typeof item.netProfit === "number"
           ? item.netProfit
           : currentValue !== null && totalPayed !== null
           ? currentValue - totalPayed
           : null
-      const percentNetProfit =
-        typeof item.percentNetProfit === "number"
+      const percentNetProfit = sold
+        ? (buy ? ((steam - buy) / buy) * 100 : null)
+        : typeof item.percentNetProfit === "number"
           ? item.percentNetProfit
           : netProfit !== null && totalPayed
           ? (netProfit / totalPayed) * 100
           : null
-      const totalNetProfit =
-        typeof item.totalNetProfit === "number" ? item.totalNetProfit : null
+      const totalNetProfit = sold
+        ? (item.realizedProfit ?? null)
+        : typeof item.totalNetProfit === "number" ? item.totalNetProfit : null
 
       const cat = categories?.find((c: any) => String(c.id) === String(item.categoryId))
       const lastUpdate = item.editDate ?? item.insertDate
+      const change1d = item.change1d ?? null
+      const change7d = item.change7d ?? null
+      const change30d = item.change30d ?? null
 
       return {
-        __calc: { qty, buy, totalPayed, steam, netProfit, percentNetProfit, totalNetProfit, categoryName: cat?.name ?? "", lastUpdate },
+        __calc: { qty, buy, totalPayed, steam, netProfit, percentNetProfit, totalNetProfit, categoryName: cat?.name ?? "", lastUpdate, sold, change1d, change7d, change30d },
         ...item,
       }
     })
@@ -225,6 +246,9 @@ export function ItemsTable({
         case "totalNetProfit": return c.totalNetProfit ?? -Infinity
         case "percentNetProfit": return c.percentNetProfit ?? -Infinity
         case "lastUpdate": return new Date(c.lastUpdate ?? 0).getTime()
+        case "change1d": return c.change1d ?? -Infinity
+        case "change7d": return c.change7d ?? -Infinity
+        case "change30d": return c.change30d ?? -Infinity
       }
     }
     arr.sort((a, b) => {
@@ -343,6 +367,21 @@ export function ItemsTable({
         
         <div className="flex gap-3">
           <Select
+            value={status}
+            onValueChange={(val) => { setStatus(val as typeof status); setPage(1) }}
+          >
+            <SelectTrigger className="h-10 flex-1 md:w-[110px] rounded-lg glass-tile border border-border text-foreground">
+              <SelectValue />
+            </SelectTrigger>
+
+            <SelectContent className="glass-panel glass-select-content">
+              <SelectItem value="held">Held</SelectItem>
+              <SelectItem value="sold">Sold</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
             value={selectedCategory}
             onValueChange={(val) => { setSelectedCategory(val); setPage(1) }}
           >
@@ -412,7 +451,12 @@ export function ItemsTable({
                   {/* Priority 3: Extended Profit stats (Hidden on Mobile/Tablet) */}
                   <SortableHead label="Tot. Profit" k="totalNetProfit" alignRight title="Total Net Profit" className="hidden xl:table-cell" />
                   <SortableHead label="Yield" k="percentNetProfit" alignRight title="Yield" className="hidden lg:table-cell" />
-                  
+
+                  {/* Priority 3: Steam price changes (Hidden on Mobile/Tablet) */}
+                  <SortableHead label="24h" k="change1d" alignRight title="Steam price change vs the day before" className="hidden xl:table-cell" />
+                  <SortableHead label="7d" k="change7d" alignRight title="Steam price change vs 7 days before" className="hidden lg:table-cell" />
+                  <SortableHead label="30d" k="change30d" alignRight title="Steam price change vs 30 days before" className="hidden xl:table-cell" />
+
                   {/* Priority 4: Date (Hidden on most screens unless huge) */}
                   <SortableHead label="Updated" k="lastUpdate" alignRight className="hidden 2xl:table-cell" />
                   
@@ -424,7 +468,7 @@ export function ItemsTable({
               <TableBody>
                 {sorted.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={14} className="text-center py-8 text-muted-foreground">
                       No items found.
                     </TableCell>
                   </TableRow>
@@ -455,7 +499,10 @@ export function ItemsTable({
                         {/* Name - Always visible */}
                         <TableCell className="font-medium">
                           <div className="flex flex-col">
-                            <span>{item.name}</span>
+                            <span>
+                              {item.name}
+                              {c.sold && <Badge variant="secondary" className="ml-2">Sold</Badge>}
+                            </span>
                             {/* Show category as small text on mobile since column is hidden */}
                             <span className="text-xs text-muted-foreground md:hidden">{category?.name}</span>
                           </div>
@@ -520,6 +567,11 @@ export function ItemsTable({
                             </span>
                           )}
                         </TableCell>
+
+                        {/* Steam price changes */}
+                        <ChangeCell value={c.change1d} className="hidden xl:table-cell" />
+                        <ChangeCell value={c.change7d} className="hidden lg:table-cell" />
+                        <ChangeCell value={c.change30d} className="hidden xl:table-cell" />
                         
                         {/* Date - Hidden 2xl */}
                         <TableCell className="text-right text-xs text-muted-foreground hidden 2xl:table-cell">
@@ -529,15 +581,31 @@ export function ItemsTable({
                         {/* Actions - Always visible */}
                         <TableCell className="text-right" onClick={stop} onMouseDown={stop}>
                           <div className="flex items-center justify-end gap-1">
-                            <Button
-                              onClick={() => handleUpdatePrice(item.id, item.name)}
-                              variant="ghost"
-                              size="sm"
-                              disabled={isRowUpdating || isRowDeleting}
-                              className={cn("btn-glass-ghost px-2 sm:px-3", isRowUpdating && "animate-pulse")}
-                            >
-                              <RefreshCcw className={`w-4 h-4 ${isRowUpdating ? "animate-spin" : ""}`} />
-                            </Button>
+                            {!c.sold && (
+                              <>
+                                <Button
+                                  onClick={() => handleUpdatePrice(item.id, item.name)}
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Update price"
+                                  disabled={isRowUpdating || isRowDeleting}
+                                  className={cn("btn-glass-ghost px-2 sm:px-3", isRowUpdating && "animate-pulse")}
+                                >
+                                  <RefreshCcw className={`w-4 h-4 ${isRowUpdating ? "animate-spin" : ""}`} />
+                                </Button>
+
+                                <Button
+                                  onClick={() => setSellItem(item)}
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Sell"
+                                  disabled={isRowUpdating || isRowDeleting}
+                                  className="btn-glass-ghost px-2 sm:px-3"
+                                >
+                                  <DollarSign className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
                             
                             {/* Hide Edit button on super small screens, user can click row */}
                             <Button
@@ -615,6 +683,13 @@ export function ItemsTable({
         onOpenChange={(v) => !v && setDetailItem(null)}
         item={detailItem}
         categories={categories}
+      />
+
+      <SellItemDialog
+        open={!!sellItem}
+        onOpenChange={(v) => !v && setSellItem(null)}
+        item={sellItem}
+        onSold={onPriceUpdate}
       />
     </div>
   )

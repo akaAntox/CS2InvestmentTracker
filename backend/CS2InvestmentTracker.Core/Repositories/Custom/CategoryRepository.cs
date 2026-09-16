@@ -9,7 +9,7 @@ public class CategoryRepository : GenericRepository<Category>
 {
     private readonly ApplicationDbContext context;
 
-    public CategoryRepository(ApplicationDbContext context) : base(context) 
+    public CategoryRepository(ApplicationDbContext context) : base(context)
     {
         this.context = context;
     }
@@ -30,8 +30,10 @@ public class CategoryRepository : GenericRepository<Category>
             .AsNoTracking()
             .ToListAsync();
 
+        // Sold items are no longer holdings
         var items = await context.Items
             .AsNoTracking()
+            .Where(i => i.SellDate == null)
             .ToListAsync();
 
         var itemsByCategory = items
@@ -47,6 +49,7 @@ public class CategoryRepository : GenericRepository<Category>
             var profitableItems = catItems
                 .Where(i => i.MinSellPrice.HasValue && i.BuyPrice != 0)
                 .ToList();
+            var profitableCost = profitableItems.Sum(i => i.TotalBuyPrice);
 
             return new CategorySummaryDto
             {
@@ -62,8 +65,9 @@ public class CategoryRepository : GenericRepository<Category>
                 TotalNetProfit = catItems.Any(i => i.TotalNetProfit.HasValue)
                     ? catItems.Sum(i => i.TotalNetProfit ?? 0)
                     : null,
-                AveragePercentProfit = profitableItems.Count > 0
-                    ? profitableItems.Average(i => i.PercentNetProfit ?? 0)
+                // Weighted by cost: a 0.03€ item must not count as much as a 500€ one
+                AveragePercentProfit = profitableCost > 0
+                    ? profitableItems.Sum(i => i.TotalNetProfit ?? 0) / profitableCost * 100
                     : null,
                 BestItem = profitableItems
                     .OrderByDescending(i => i.PercentNetProfit)

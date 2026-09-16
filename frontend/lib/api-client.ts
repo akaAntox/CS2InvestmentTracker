@@ -138,8 +138,11 @@ async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Pr
 export const itemsApi = {
   getAll: () => apiRequest<any[]>("/api/items"),
   getById: (id: string) => apiRequest<any>(`/api/items/${id}`),
+  getHistory: (id: string) => apiRequest<any[]>(`/api/items/${id}/history`),
+  getPortfolioHistory: () => apiRequest<any[]>("/api/items/history"),
   create: (data: any) => apiRequest<any>("/api/items", { method: "POST", body: data }),
   update: (data: any) => apiRequest<any>(`/api/items`, { method: "PUT", body: data }),
+  sell: (id: string, data: any) => apiRequest<any>(`/api/items/${id}/sell`, { method: "POST", body: data }),
   delete: (id: string) => apiRequest<void>(`/api/items/${id}`, { method: "DELETE" }),
 }
 

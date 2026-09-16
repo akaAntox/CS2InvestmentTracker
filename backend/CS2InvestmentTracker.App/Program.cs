@@ -5,6 +5,7 @@ using CS2InvestmentTracker.Core.Models;
 using CS2InvestmentTracker.Core.Repositories;
 using CS2InvestmentTracker.Core.Repositories.Custom;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
@@ -51,7 +52,9 @@ builder.Services.AddHttpClient(nameof(SteamApi), client =>
     client.Timeout = TimeSpan.FromSeconds(15);
 });
 builder.Services.AddSingleton<SteamApi>();
+builder.Services.AddSingleton<PriceAlertService>();
 builder.Services.AddSingleton<PriceUpdateService>();
+builder.Services.AddHostedService<DailyPriceUpdateJob>();
 
 // Add CORS policy to allow all origins, methods, and headers.
 const string FrontendCorsPolicy = "FrontendCorsPolicy";
@@ -70,6 +73,17 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Keep the database schema in line with the deployed code, backing up the file before changing it
+using (var scope = app.Services.CreateScope())
+{
+    var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database;
+    var dbFile = new SqliteConnectionStringBuilder(connectionString).DataSource;
+    if (File.Exists(dbFile) && database.GetPendingMigrations().Any())
+        File.Copy(dbFile, $"{dbFile}.{DateTime.Now:yyyyMMddHHmmss}.bak");
+    database.Migrate();
+}
+
 app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.

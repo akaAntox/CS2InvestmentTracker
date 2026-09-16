@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Calendar, Search, Plus, Pencil, Trash2, AlertCircle, ChevronDown, ChevronUp, ChevronsUpDown, RefreshCcw } from "lucide-react"
+import { Bell, Calendar, Search, Plus, Pencil, Trash2, AlertCircle, ChevronDown, ChevronUp, ChevronsUpDown, RefreshCcw } from "lucide-react"
 import { useApi } from "@/hooks/use-api"
 import { eventsApi } from "@/lib/api-client"
 import { formatDate } from "@/lib/format-utils"
@@ -40,6 +40,11 @@ const ACTION_CONFIG: Record<ActionType, { label: string; icon: React.ReactNode; 
     label: "Delete",
     icon: <Trash2 className="w-3 h-3" />,
     className: "bg-red-500/20 text-red-400 border-red-500/30",
+  },
+  [ActionType.Alert]: {
+    label: "Alert",
+    icon: <Bell className="w-3 h-3" />,
+    className: "bg-amber-500/20 text-amber-400 border-amber-500/30",
   },
 }
 

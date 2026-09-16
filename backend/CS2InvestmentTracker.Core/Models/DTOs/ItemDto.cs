@@ -9,13 +9,24 @@ public class ItemDto
     public int Quantity { get; set; } = 1;
     public decimal BuyPrice { get; set; } = 0;
     public int CategoryId { get; set; }
+    public decimal? AlertAbovePrice { get; set; }
+    public decimal? AlertBelowPrice { get; set; }
 }
 
 public class ItemCreateDto : ItemDto { }
 
-public class ItemUpdateDto : ItemDto 
+public class ItemUpdateDto : ItemDto
 {
     public int Id { get; set; }
+    public decimal? SellPrice { get; set; }
+    public DateTime? SellDate { get; set; }
+}
+
+public class ItemSellDto
+{
+    public int Quantity { get; set; }
+    public decimal SellPrice { get; set; }
+    public DateTime SellDate { get; set; }
 }
 
 public class ItemReadDto : ItemDto

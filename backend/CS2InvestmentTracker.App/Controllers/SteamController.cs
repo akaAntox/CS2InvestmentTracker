@@ -25,8 +25,8 @@ public class SteamController(SteamApi steamApi, PriceUpdateService priceUpdateSe
         {
             // Fetch all items and update their prices
             logger.LogInformation("Updating prices");
-            var items = await itemRepository.GetAllAsync();
-            if (!priceUpdateService.TryStartUpdate(items.ToList()))
+            var items = await itemRepository.GetUnsoldItemsAsync();
+            if (!priceUpdateService.TryStartUpdate(items))
             {
                 logger.LogWarning("Price update already in progress");
                 return Conflict("Price update already in progress");

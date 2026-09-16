@@ -2,6 +2,7 @@
 
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { KpiCard } from "@/components/kpi-card"
+import { PriceChart } from "@/components/price-chart"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -18,6 +19,7 @@ import {
   RefreshCcw,
   CreditCard,
   DollarSign,
+  Wallet,
 } from "lucide-react"
 import "@/styles/glass.css"
 
@@ -25,69 +27,57 @@ interface Item {
   id: string
   name: string
   buyPrice: number
+  minSellPrice?: number | null
   totalNetProfit?: number | null
   percentNetProfit?: number | null
+  realizedProfit?: number | null
+  sellDate?: string | null
+  priceUpdateDate?: string | null
   insertDate: string
   editDate: string
   quantity: number
 }
 
+const profitClass = (value: number) =>
+  value > 0 ? "text-emerald-500" : value < 0 ? "text-destructive" : "text-foreground"
+
 export default function Home() {
-  const { data: items = [], isLoading: itemsLoading, mutate: mutateItems } = 
-    useApi("items", () => itemsApi.getAll())
-  const { data: categories = [], isLoading: categoriesLoading } = 
+  const { data: items = [], isLoading: itemsLoading, mutate: mutateItems } =
+    useApi<Item[]>("items", () => itemsApi.getAll())
+  const { data: categories = [], isLoading: categoriesLoading } =
     useApi("categories", () => categoriesApi.getAll())
+  const { data: history = [], isLoading: historyLoading, mutate: mutateHistory } =
+    useApi("items/history", () => itemsApi.getPortfolioHistory())
 
   const { isUpdating, updateProgress, processedCount, totalCount, handleUpdatePrices } =
-    usePriceUpdate({ onCompleted: mutateItems })
+    usePriceUpdate({ onCompleted: () => { mutateItems(); mutateHistory() } })
 
-  const numberItems = items?.length || 0
-  const numberCategories = categories?.length || 0
+  // Sold items only count as realized profit
+  const activeItems = items.filter((item) => item.sellDate == null)
+  const soldItems = items.filter((item) => item.sellDate != null)
 
-  const totalItems = items?.reduce((sum: number, item: Item) => sum + item.quantity, 0) || 0
-  const totalSpent = items?.reduce((sum: number, item: Item) => sum + item.buyPrice * item.quantity, 0) || 0
+  const numberItems = activeItems.length
+  const numberCategories = categories.length
 
-  const averagePercentage = items?.length
-    ? items.reduce((sum: number, item: Item) => sum + (item.percentNetProfit || 0), 0) /
-      items.length
-    : 0
+  const totalItems = activeItems.reduce((sum, item) => sum + item.quantity, 0)
+  const totalSpent = activeItems.reduce((sum, item) => sum + item.buyPrice * item.quantity, 0)
+  const totalNetProfit = activeItems.reduce((sum, item) => sum + (item.totalNetProfit || 0), 0)
+  const realizedProfit = soldItems.reduce((sum, item) => sum + (item.realizedProfit || 0), 0)
+  const profitableItems = activeItems.filter((item) => (item.totalNetProfit || 0) > 0).length
 
-  const totalNetProfit = items?.reduce((sum: number, item: Item) => sum + (item.totalNetProfit || 0), 0) || 0
+  // Yield weighted by cost, on the items that have a market price
+  const pricedSpent = activeItems
+    .filter((item) => item.minSellPrice != null)
+    .reduce((sum, item) => sum + item.buyPrice * item.quantity, 0)
+  const averagePercentage = pricedSpent > 0 ? (totalNetProfit / pricedSpent) * 100 : 0
 
-  const profitableItems = items?.filter((item: Item) => (item.totalNetProfit || 0) > 0).length || 0
+  const lastPriceSync = activeItems.reduce<Date | null>((latest, item) => {
+    if (!item.priceUpdateDate) return latest
+    const date = new Date(item.priceUpdateDate)
+    return latest && latest > date ? latest : date
+  }, null)
 
-  const lastUpdateDate = items?.length
-    ? new Date(
-        Math.max(
-          ...items.map((item: Item) => {
-            const editDate = new Date(item.editDate).getTime()
-            const insertDate = new Date(item.insertDate).getTime()
-            return Math.max(editDate, insertDate)
-          })
-        )
-      )
-    : null
-
-  const averagePercentageClass =
-    averagePercentage > 0
-      ? "text-emerald-500"
-      : averagePercentage < 0
-      ? "text-destructive"
-      : "text-foreground"
-
-  const totalNetProfitClass =
-    totalNetProfit > 0
-      ? "text-emerald-500"
-      : totalNetProfit < 0
-      ? "text-destructive"
-      : "text-foreground"
-
-  const layoutVariant: "stonks" | "not-stonks" =
-    totalNetProfit > 0
-      ? "stonks"
-      : totalNetProfit < 0
-      ? "not-stonks"
-      : "stonks" // default to "stonks" if neutral
+  const layoutVariant: "stonks" | "not-stonks" = totalNetProfit < 0 ? "not-stonks" : "stonks"
 
   return (
     <DashboardLayout variant={layoutVariant}>
@@ -150,7 +140,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard
                 title="Items"
-                description="Number of registered items"
+                description="Number of items held"
                 value={numberItems}
                 icon={<Package className="w-5 h-5" />}
                 isLoading={itemsLoading}
@@ -166,22 +156,18 @@ export default function Home() {
               />
               <KpiCard
                 title="Average Yield %"
-                description="Average yield on items"
+                description="Net profit on the cost of priced items"
                 value={formatPercentage(averagePercentage)}
                 icon={<TrendingUp className="w-5 h-5" />}
                 isLoading={itemsLoading}
                 className="glass-panel"
               />
               <KpiCard
-                title="Last update"
-                description="Last detected modification/update"
-                value={
-                  lastUpdateDate
-                    ? lastUpdateDate.toLocaleString()
-                    : "No data available"
-                }
+                title="Last price sync"
+                description="Last Steam price update"
+                value={lastPriceSync ? lastPriceSync.toLocaleString() : "No data available"}
                 icon={<Clock className="w-5 h-5" />}
-                isLoading={false}
+                isLoading={itemsLoading}
                 className="glass-panel"
               />
             </div>
@@ -227,13 +213,11 @@ export default function Home() {
 
                   <div className="p-4 glass-panel rounded-lg flex flex-col gap-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm text-muted-foreground">Last Update</p>
-                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Realized Profit</p>
+                      <Wallet className="w-4 h-4 text-muted-foreground" />
                     </div>
-                    <p className="text-sm text-foreground">
-                      {lastUpdateDate
-                        ? lastUpdateDate.toLocaleString()
-                        : "Nessun dato disponibile"}
+                    <p className={`text-2xl font-bold ${profitClass(realizedProfit)}`}>
+                      {formatCurrency(realizedProfit)}
                     </p>
                   </div>
                 </div>
@@ -245,16 +229,16 @@ export default function Home() {
                       <p className="text-sm text-muted-foreground">Average Yield %</p>
                       <TrendingUp className="w-4 h-4 text-muted-foreground" />
                     </div>
-                    <p className={`text-2xl font-bold ${averagePercentageClass}`}>
+                    <p className={`text-2xl font-bold ${profitClass(averagePercentage)}`}>
                       {formatPercentage(averagePercentage)}
                     </p>
                   </div>
                   <div className="p-4 glass-panel rounded-lg">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm text-muted-foreground">Total Net Profit</p>
+                      <p className="text-sm text-muted-foreground">Unrealized Net Profit</p>
                       <DollarSign className="w-4 h-4 text-muted-foreground" />
                     </div>
-                    <p className={`text-2xl font-bold ${totalNetProfitClass}`}>
+                    <p className={`text-2xl font-bold ${profitClass(totalNetProfit)}`}>
                       {formatCurrency(totalNetProfit)}
                     </p>
                   </div>
@@ -263,9 +247,23 @@ export default function Home() {
                 <p className="text-xs text-muted-foreground">
                   Use the <span className="font-semibold">"Update Prices"</span> button to
                   synchronize prices from the Steam Market and update performance indicators.
+                  Prices are also updated automatically once a day.
                 </p>
               </CardContent>
             </Card>
+
+            <PriceChart
+              title="Portfolio History"
+              data={history}
+              isLoading={historyLoading}
+              className="glass-panel"
+              series={[
+                { key: "totalBuyPrice", name: "Total Spent", color: "var(--color-chart-1)" },
+                { key: "totalMinSellPrice", name: "Market Value", color: "var(--color-chart-2)" },
+                { key: "totalNetProfit", name: "Unrealized Profit", color: "var(--color-chart-3)" },
+                { key: "realizedProfit", name: "Realized Profit", color: "var(--color-chart-4)" },
+              ]}
+            />
           </div>
         </div>
       </div>

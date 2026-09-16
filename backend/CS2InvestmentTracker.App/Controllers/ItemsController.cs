@@ -50,6 +50,8 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
                 Quantity = itemDto.Quantity,
                 BuyPrice = itemDto.BuyPrice,
                 CategoryId = itemDto.CategoryId,
+                AlertAbovePrice = itemDto.AlertAbovePrice,
+                AlertBelowPrice = itemDto.AlertBelowPrice,
                 InsertDate = DateTime.Now
             };
 
@@ -143,6 +145,10 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
             item.Quantity = itemDto.Quantity;
             item.BuyPrice = itemDto.BuyPrice;
             item.CategoryId = itemDto.CategoryId;
+            item.AlertAbovePrice = itemDto.AlertAbovePrice;
+            item.AlertBelowPrice = itemDto.AlertBelowPrice;
+            item.SellPrice = itemDto.SellPrice;
+            item.SellDate = itemDto.SellDate;
 
             logger.LogInformation("Updating item {Name}", item.Name);
             await itemRepository.UpdateAsync(item);
@@ -152,6 +158,60 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Error while updating item {Name}: {Exception}", itemDto.Name, ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    [HttpPost("{itemId}/sell")]
+    [SwaggerOperation(Summary = "Sell all or part of an item")]
+    public async Task<ActionResult<Item>> SellItem(int itemId, [FromBody] ItemSellDto sellDto)
+    {
+        // Validate the itemId and the incoming DTO
+        if (itemId <= 0)
+        {
+            logger.LogWarning("Error while selling item id {Id}: Invalid value", itemId);
+            return BadRequest();
+        }
+
+        var validator = new ItemSellDtoValidator();
+        var result = validator.Validate(sellDto);
+        result.AddToModelState(ModelState);
+
+        if (!ModelState.IsValid)
+        {
+            logger.LogWarning("Error while selling item id {Id}: Invalid model state", itemId);
+            return ValidationProblem(ModelState);
+        }
+
+        try
+        {
+            var item = await itemRepository.GetByIdAsync(itemId);
+            if (item == null)
+            {
+                logger.LogWarning("Error while selling item id {Id}: Item not found", itemId);
+                return NotFound();
+            }
+
+            if (item.SellDate != null)
+            {
+                logger.LogWarning("Error while selling item {Name}: Item already sold", item.Name);
+                return Conflict("Item already sold.");
+            }
+
+            if (sellDto.Quantity > item.Quantity)
+            {
+                logger.LogWarning("Error while selling item {Name}: Quantity {Quantity} exceeds owned {Owned}", item.Name, sellDto.Quantity, item.Quantity);
+                return BadRequest($"Cannot sell more than the owned quantity ({item.Quantity}).");
+            }
+
+            logger.LogInformation("Selling {Quantity} of item {Name}", sellDto.Quantity, item.Name);
+            var sold = await itemRepository.SellAsync(item, sellDto.Quantity, sellDto.SellPrice, sellDto.SellDate);
+            await eventLogRepository.NewEvent(ActionType.Update, $"Item '{item.Name}' sold ({sellDto.Quantity}).", sellDto, sold);
+            return Ok(sold);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Error while selling item id {Id}: {Exception}", itemId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -170,6 +230,47 @@ public class ItemsController(SteamApi steamApi, ILogger<ItemsController> logger,
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Error while getting all items: {Exception}", ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    [HttpGet("history")]
+    [SwaggerOperation(Summary = "Get the daily history of portfolio totals")]
+    public async Task<ActionResult<IEnumerable<PortfolioHistoryDto>>> GetPortfolioHistory()
+    {
+        try
+        {
+            logger.LogInformation("Getting portfolio history");
+            var history = await itemRepository.GetPortfolioHistoryAsync();
+            return Ok(history);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Error while getting portfolio history: {Exception}", ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    [HttpGet("{itemId}/history")]
+    [SwaggerOperation(Summary = "Get the daily price history of an item")]
+    public async Task<ActionResult<IEnumerable<PriceSnapshot>>> GetItemHistory(int itemId)
+    {
+        // Validate the itemId
+        if (itemId <= 0)
+        {
+            logger.LogWarning("Error while getting history for item id {Id}: Invalid value", itemId);
+            return BadRequest();
+        }
+
+        try
+        {
+            logger.LogInformation("Getting history for item id {Id}", itemId);
+            var history = await itemRepository.GetItemHistoryAsync(itemId);
+            return Ok(history);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Error while getting history for item id {Id}: {Exception}", itemId, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }

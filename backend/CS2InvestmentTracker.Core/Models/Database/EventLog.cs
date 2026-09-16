@@ -4,7 +4,8 @@ public enum ActionType
 {
     Insert,
     Update,
-    Delete
+    Delete,
+    Alert
 }
 
 public class EventLog

@@ -11,8 +11,10 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrency, formatDate } from "@/lib/format-utils"
-import { steamApi } from "@/lib/api-client"
+import { itemsApi, steamApi } from "@/lib/api-client"
 import { cn } from "@/lib/utils"
+import { useApi } from "@/hooks/use-api"
+import { PriceChart } from "@/components/price-chart"
 
 type Item = {
   id: string | number
@@ -35,6 +37,15 @@ type Item = {
   updatedAt?: string | Date | null
   insertDate?: string | Date | null
   editDate?: string | Date | null
+  priceUpdateDate?: string | Date | null
+  sellPrice?: number | null
+  sellDate?: string | Date | null
+  realizedProfit?: number | null
+  alertAbovePrice?: number | null
+  alertBelowPrice?: number | null
+  change1d?: number | null
+  change7d?: number | null
+  change30d?: number | null
 }
 
 type Props = {
@@ -51,6 +62,11 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
   const [imgError, setImgError] = useState<string | null>(null)
 
   const safeItem = useMemo(() => (item ? { ...item, name: item.name ?? "Senza nome" } : null), [item])
+
+  const { data: history = [], isLoading: historyLoading } = useApi(
+    open && item?.id ? `items/${item.id}/history` : null,
+    () => itemsApi.getHistory(String(item?.id)),
+  )
 
   const categoryLabel = useMemo(() => {
     const it = safeItem
@@ -106,8 +122,9 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
       >
         <DialogHeader className="px-4 py-4 sm:px-6 sm:py-5 border-b min-h-0 flex-shrink-0">
           <DialogTitle className="text-xl sm:text-2xl truncate pr-6">{title}</DialogTitle>
-          {(categoryLabel || safeItem?.marketName || safeItem?.quantity != null) && (
+          {(categoryLabel || safeItem?.marketName || safeItem?.quantity != null || safeItem?.sellDate) && (
             <DialogDescription className="flex flex-wrap gap-2 mt-2">
+              {safeItem?.sellDate && <Badge variant="destructive">Sold</Badge>}
               {categoryLabel && <Badge variant="secondary" className="bg-secondary/50">{categoryLabel}</Badge>}
               {safeItem?.marketName && <Badge variant="outline" className="border-border/50">{safeItem.marketName}</Badge>}
               {safeItem?.quantity != null && <Badge variant="default">Qty: {safeItem.quantity}</Badge>}
@@ -148,12 +165,14 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
                 </div>
               </div>
 
-              {(safeItem?.createdAt || safeItem?.updatedAt || safeItem?.insertDate || safeItem?.editDate) && (
+              {(safeItem?.createdAt || safeItem?.updatedAt || safeItem?.insertDate || safeItem?.editDate || safeItem?.priceUpdateDate || safeItem?.sellDate) && (
                 <div className="rounded-lg glass-tile p-3 text-xs text-muted-foreground space-y-1">
                   {safeItem?.createdAt && <div className="flex justify-between"><span>Created:</span> <span className="font-mono">{formatDate(safeItem.createdAt as any)}</span></div>}
                   {safeItem?.insertDate && <div className="flex justify-between"><span>Inserted:</span> <span className="font-mono">{formatDate(safeItem.insertDate as any)}</span></div>}
                   {safeItem?.updatedAt && <div className="flex justify-between"><span>Updated:</span> <span className="font-mono">{formatDate(safeItem.updatedAt as any)}</span></div>}
                   {safeItem?.editDate && <div className="flex justify-between"><span>Modified:</span> <span className="font-mono">{formatDate(safeItem.editDate as any)}</span></div>}
+                  {safeItem?.priceUpdateDate && <div className="flex justify-between"><span>Price sync:</span> <span className="font-mono">{formatDate(safeItem.priceUpdateDate as any)}</span></div>}
+                  {safeItem?.sellDate && <div className="flex justify-between"><span>Sold:</span> <span className="font-mono">{formatDate(safeItem.sellDate as any)}</span></div>}
                 </div>
               )}
             </section>
@@ -208,10 +227,30 @@ export function ItemDetailDialog({ open, onOpenChange, item, loading, categories
                     value={safeItem?.percentNetProfit == null ? "—" : `${Number(safeItem.percentNetProfit).toFixed(2)}%`}
                     highlight={Number(safeItem?.percentNetProfit ?? 0) > 0 ? "positive" : Number(safeItem?.percentNetProfit ?? 0) < 0 ? "negative" : "neutral"}
                   />
+
+                  <Stat label="24h" value={fmtPct(safeItem?.change1d)} highlight={tone(safeItem?.change1d)} />
+                  <Stat label="7d" value={fmtPct(safeItem?.change7d)} highlight={tone(safeItem?.change7d)} />
+                  <Stat label="30d" value={fmtPct(safeItem?.change30d)} highlight={tone(safeItem?.change30d)} />
+
+                  {safeItem?.sellDate && (
+                    <>
+                      <Stat label="Sold (Unit)" value={fmtCur(safeItem.sellPrice)} />
+                      <Stat label="Realized" value={fmtCur(safeItem.realizedProfit)} highlight={tone(safeItem.realizedProfit)} />
+                    </>
+                  )}
+
+                  {(safeItem?.alertAbovePrice != null || safeItem?.alertBelowPrice != null) && (
+                    <>
+                      <Stat label="Alert ≥" value={fmtCur(safeItem?.alertAbovePrice)} />
+                      <Stat label="Alert ≤" value={fmtCur(safeItem?.alertBelowPrice)} />
+                    </>
+                  )}
                 </div>
               </div>
             </section>
           </div>
+
+          <PriceChart data={history} isLoading={historyLoading} height={250} className="glass-tile mt-6" />
         </div>
       </DialogContent>
     </Dialog>
@@ -237,3 +276,8 @@ function Stat({ label, value, highlight = "neutral" }: Readonly<{ label: string;
 /* helpers */
 function fmt(n?: number | null) { return n == null ? "—" : String(n) }
 function fmtCur(n?: number | null) { return n == null ? "—" : formatCurrency(Number(n)) }
+function fmtPct(n?: number | null) { return n == null ? "—" : `${n > 0 ? "+" : ""}${Number(n).toFixed(2)}%` }
+function tone(n?: number | null): "positive" | "negative" | "neutral" {
+  if (n == null || n === 0) return "neutral"
+  return n > 0 ? "positive" : "negative"
+}

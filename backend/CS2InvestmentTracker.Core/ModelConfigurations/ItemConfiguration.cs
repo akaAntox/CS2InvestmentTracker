@@ -36,6 +36,18 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
             .HasPrecision(18, 2);
 
         builder
+            .Property(x => x.SellPrice)
+            .HasPrecision(18, 2);
+
+        builder
+            .Property(x => x.AlertAbovePrice)
+            .HasPrecision(18, 2);
+
+        builder
+            .Property(x => x.AlertBelowPrice)
+            .HasPrecision(18, 2);
+
+        builder
             .Property(x => x.CategoryId)
             .IsRequired(false);
 

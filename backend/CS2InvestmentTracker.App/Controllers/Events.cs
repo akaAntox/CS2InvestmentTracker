@@ -1,5 +1,4 @@
 ﻿using CS2InvestmentTracker.Core.Repositories.Custom;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -9,7 +8,7 @@ namespace CS2InvestmentTracker.App.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 public class EventsController(ILogger<EventsController> logger, EventLogRepository eventLogRepository, UserManager<IdentityUser> userManager) : ControllerBase
-{    
+{
     [HttpGet]
     [SwaggerOperation(Summary = "Get all events from the event log")]
     public async Task<IActionResult> GetEvents()

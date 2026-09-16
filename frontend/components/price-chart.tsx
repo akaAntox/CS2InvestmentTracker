@@ -1,55 +1,85 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { formatCurrency } from "@/lib/format-utils"
+import { cn } from "@/lib/utils"
 
-interface PriceData {
-  date: string
-  buyPrice: number
-  minSellPrice?: number
+export interface ChartSeries {
+  key: string
+  name: string
+  color: string
 }
 
+const PRICE_SERIES: ChartSeries[] = [
+  { key: "buyPrice", name: "Buy Price", color: "var(--color-chart-1)" },
+  { key: "minSellPrice", name: "Min Sell Price", color: "var(--color-chart-2)" },
+]
+
+const RANGES = [
+  { label: "30D", days: 30 },
+  { label: "90D", days: 90 },
+  { label: "1Y", days: 365 },
+  { label: "All", days: null },
+]
+
 interface PriceChartProps {
-  data?: PriceData[]
+  /** Rows with a `date` field plus one numeric field per series */
+  data?: Record<string, any>[]
+  series?: ChartSeries[]
   isLoading?: boolean
   title?: string
   height?: number
+  className?: string
 }
 
 export function PriceChart({
   data = [],
+  series = PRICE_SERIES,
   isLoading = false,
-  title = "Andamento Prezzi",
+  title = "Price History",
   height = 300,
+  className,
 }: Readonly<PriceChartProps>) {
+  const [days, setDays] = useState<number | null>(null)
+
   const chartData = useMemo(() => {
-    if (!data || data.length === 0) return []
+    const cutoff = days === null ? null : Date.now() - days * 86_400_000
+    return data
+      .filter((row) => cutoff === null || new Date(row.date).getTime() >= cutoff)
+      .map((row): Record<string, any> => ({
+        ...row,
+        date: new Date(row.date).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "2-digit" }),
+      }))
+  }, [data, days])
 
-    return data.map((item: any) => ({
-      date: new Date(item.trackDate || item.date).toLocaleDateString("it-IT", {
-        month: "short",
-        day: "numeric",
-      }),
-      buyPrice: Number.parseFloat(item.buyPrice?.toString() || "0"),
-      minSellPrice:
-        item.minSellPrice
-          ? Number.parseFloat((item.minSellPrice)?.toString() || "0")
-          : null,
-    }))
-  }, [data])
-
-  const hasData = chartData.length > 0
+  const visibleSeries = series.filter((s) => chartData.some((row) => row[s.key] != null))
+  const hasData = visibleSeries.length > 0
 
   return (
-    <Card className="bg-card border-border">
+    <Card className={cn("bg-card border-border", className)}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
-        <CardDescription>{hasData ? "Visualizzazione storica dei prezzi" : "Nessun dato disponibile"}</CardDescription>
+        <CardDescription>{hasData ? "Daily snapshot history" : "No data available"}</CardDescription>
+        <CardAction className="flex gap-1">
+          {RANGES.map((range) => (
+            <Button
+              key={range.label}
+              type="button"
+              size="sm"
+              variant={days === range.days ? "secondary" : "ghost"}
+              onClick={() => setDays(range.days)}
+            >
+              {range.label}
+            </Button>
+          ))}
+        </CardAction>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="h-80 flex items-center justify-center text-muted-foreground">Caricamento dati...</div>
+          <div style={{ height }} className="flex items-center justify-center text-muted-foreground">Loading data...</div>
         ) : hasData ? (
           <ResponsiveContainer width="100%" height={height}>
             <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
@@ -63,38 +93,31 @@ export function PriceChart({
                   borderRadius: "8px",
                   color: "var(--color-foreground)",
                 }}
-                formatter={(value: any) => `€${Number(value).toFixed(2)}`}
+                formatter={(value: any) => formatCurrency(Number(value))}
               />
               <Legend
                 wrapperStyle={{
                   color: "var(--color-foreground)",
                 }}
               />
-              <Line
-                type="monotone"
-                dataKey="buyPrice"
-                stroke="var(--color-chart-1)"
-                name="Prezzo Base"
-                strokeWidth={2}
-                dot={{ fill: "var(--color-chart-1)", r: 4 }}
-              />
-              {chartData.some((d: any) => d.minSellPrice) && (
+              {visibleSeries.map((s) => (
                 <Line
+                  key={s.key}
                   type="monotone"
-                  dataKey="minSellPrice"
-                  stroke="var(--color-chart-2)"
-                  name="Prezzo Minimo di Vendita"
+                  dataKey={s.key}
+                  stroke={s.color}
+                  name={s.name}
                   strokeWidth={2}
-                  dot={{ fill: "var(--color-chart-2)", r: 4 }}
+                  dot={chartData.length <= 31}
                 />
-              )}
+              ))}
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-80 flex items-center justify-center text-muted-foreground">
+          <div style={{ height }} className="flex items-center justify-center text-muted-foreground">
             <div className="text-center">
-              <p>Nessun dato disponibile</p>
-              <p className="text-xs mt-2">I dati storici verranno visualizzati quando disponibili</p>
+              <p>No data available</p>
+              <p className="text-xs mt-2">History fills up with one snapshot per day after each price update</p>
             </div>
           </div>
         )}
